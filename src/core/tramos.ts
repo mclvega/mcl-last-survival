@@ -122,9 +122,9 @@ function barril(c: Contexto, y: number, forzado?: Premio): void {
 }
 
 /** Cofre de mejora (arma, daño o cadencia). Puede ir en el carril o en el pasillo derecho. */
-function cofre(c: Contexto, y: number, x: number, premio: Premio): void {
+function cofre(c: Contexto, y: number, x: number, premio: Premio, segundos: [number, number] = [1.1, 1.6]): void {
   const valor = valorPremio(c, premio);
-  c.eventos.push({ tipo: 'barril', x, y, premio, valor, vida: c.dps * entre(c.rng, 1.1, 1.6), explosivo: false });
+  c.eventos.push({ tipo: 'barril', x, y, premio, valor, vida: c.dps * entre(c.rng, segundos[0], segundos[1]), explosivo: false });
   aplicarPremioEsperado(c, premio, valor);
 }
 
@@ -189,19 +189,20 @@ export function pasillos(c: Contexto): void {
   const e = c.estado;
   const fichas: Array<{ dy: number; op: 'suma' | 'mult'; valor: number; vida: number }> = [];
   const cantidad = Math.floor((LARGO_TRAMO - 60) / 36);
-  for (let i = 0; i < cantidad; i++) fichas.push({ dy: 40 + i * 36, op: 'suma', valor: 1, vida: c.dps * 0.06 * (1 + i / cantidad) });
+  for (let i = 0; i < cantidad; i++) fichas.push({ dy: 40 + i * 36, op: 'suma', valor: 1, vida: c.dps * 0.04 * (1 + i / cantidad) });
   c.eventos.push({ tipo: 'pasillo', y: c.y0, largo: LARGO_TRAMO - 10, lado: 0, fichas });
-  e.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, e.soldados + cantidad * 0.25);
+  e.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, e.soldados + cantidad * 0.45);
 
   if (c.params.n >= 4 && c.indice % 2 === 1) {
     const escalera: typeof fichas = [];
-    for (let k = 2; k <= 9; k++) escalera.push({ dy: 60 + (k - 2) * 88, op: 'mult', valor: k, vida: c.dps * 0.28 * k ** 1.7 });
+    // Solo 1 o 2 de cada 10 balas entran al pasillo: la vida se calcula con esa parte del fuego.
+    for (let k = 2; k <= 9; k++) escalera.push({ dy: 60 + (k - 2) * 88, op: 'mult', valor: k, vida: c.dps * 0.05 * k ** 1.5 });
     c.eventos.push({ tipo: 'pasillo', y: c.y0, largo: LARGO_TRAMO - 10, lado: 1, fichas: escalera });
-    e.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, e.soldados * 1.3);
+    e.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, e.soldados * 1.7);
   } else {
     // Cerca del muro, para que el escuadrón los alcance con sus disparos.
     const x = ANCHO - ANCHO_PASILLO + 32;
-    for (const dy of [150, 450]) cofre(c, c.y0 + dy, x, premioCofre(c));
+    for (const dy of [150, 450]) cofre(c, c.y0 + dy, x, premioCofre(c), [0.3, 0.45]);
   }
 }
 

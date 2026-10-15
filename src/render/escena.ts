@@ -431,6 +431,8 @@ export class Escena {
     const dano = 1 - f.vida / f.vidaMax;
     if (dano > 0) this.cuad([[x0, f.y, 0], [x1, f.y, 0], [x1, f.y, alto], [x0, f.y, alto]], `rgba(0,0,0,${(dano * 0.45).toFixed(2)})`);
     if (this.proy(f.x, f.y, alto / 2)) this.textoContorno((mult ? '×' : '+') + f.valor, this.X, this.Y, '#ffffff', 21 * this.K);
+    // La escalera muestra la vida que le queda a cada ficha (se ve bajar al dispararle).
+    if (mult && this.proy(f.x, f.y, alto + 9)) this.textoContorno(formato(f.vida), this.X, this.Y, '#ffe066', 12 * this.K);
   }
 
   private dibujarPuertas(par: ParPuertas): void {
