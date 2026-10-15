@@ -16,9 +16,9 @@ export interface Escenario {
 }
 
 export const ESCENARIOS: readonly Escenario[] = [
-  { nombre: 'Ciudad', icono: '🏙️', suelo: '#a7abb1', borde: '#c9ced6', linea: '#f1f3f5', detalle: '#979ba1', fuera: '#5f86b8', cielo: '#a5d8ff', pasillo: '#8fa3bd' },
-  { nombre: 'Autopista', icono: '🛣️', suelo: '#9b9da2', borde: '#d0d3d8', linea: '#ffd43b', detalle: '#8b8d92', fuera: '#c9b48a', cielo: '#b8dcf5', pasillo: '#b9a988' },
-  { nombre: 'Bosque', icono: '🌲', suelo: '#a39b8f', borde: '#9fbf8f', linea: '#efe6d2', detalle: '#938b7f', fuera: '#4f8a43', cielo: '#c3e6cb', pasillo: '#7ea36f' },
+  { nombre: 'Calle Kuyen', icono: '🏘️', suelo: '#a7abb1', borde: '#c9ced6', linea: '#f1f3f5', detalle: '#979ba1', fuera: '#5f86b8', cielo: '#a5d8ff', pasillo: '#8fa3bd' },
+  { nombre: 'Población La Conquista', icono: '🏚️', suelo: '#9b9da2', borde: '#d0d3d8', linea: '#ffd43b', detalle: '#8b8d92', fuera: '#b5876a', cielo: '#b8dcf5', pasillo: '#c49a7e' },
+  { nombre: 'Colonia Kennedy', icono: '🏡', suelo: '#a39b8f', borde: '#c9d2c0', linea: '#efe6d2', detalle: '#938b7f', fuera: '#6a9a5a', cielo: '#c3e6cb', pasillo: '#8fb07e' },
   { nombre: 'Puerto', icono: '⚓', suelo: '#a0abb3', borde: '#c4d0d8', linea: '#ffffff', detalle: '#909ba3', fuera: '#3f7fb5', cielo: '#a5d8ff', pasillo: '#86a6bf' },
   { nombre: 'Desierto', icono: '🏜️', suelo: '#aaa49c', borde: '#d8c7a3', linea: '#fff3bf', detalle: '#9a948c', fuera: '#dcc28e', cielo: '#ffe8cc', pasillo: '#cdb88f' },
   { nombre: 'Nieve', icono: '❄️', suelo: '#a9b1ba', borde: '#eef3f7', linea: '#ffffff', detalle: '#99a1aa', fuera: '#e3edf5', cielo: '#d0ebff', pasillo: '#c9d6e2' },
