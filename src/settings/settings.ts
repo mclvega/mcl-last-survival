@@ -13,6 +13,7 @@ export interface Configuracion {
   volumenMusica: number;
   volumenEfectos: number;
   vibracion: boolean;
+  pantallaCompleta: boolean;
   /** Multiplicador del arrastre del dedo. */
   sensibilidad: number;
   /** Sacudida de cámara en golpes y explosiones. */
@@ -37,6 +38,7 @@ export function configPorDefecto(): Configuracion {
     volumenMusica: 45,
     volumenEfectos: 80,
     vibracion: true,
+    pantallaCompleta: true,
     sensibilidad: 1.2,
     sacudida: !prefiereMenosMovimiento(),
   };
@@ -61,6 +63,7 @@ export function normalizarConfig(entrada: unknown): Configuracion {
     volumenMusica: num(c.volumenMusica, 0, 100, d.volumenMusica),
     volumenEfectos: num(c.volumenEfectos, 0, 100, d.volumenEfectos),
     vibracion: bool(c.vibracion, d.vibracion),
+    pantallaCompleta: bool(c.pantallaCompleta, d.pantallaCompleta),
     sensibilidad: num(c.sensibilidad, 0.6, 2, d.sensibilidad),
     sacudida: bool(c.sacudida, d.sacudida),
   };

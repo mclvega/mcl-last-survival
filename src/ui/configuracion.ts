@@ -1,6 +1,7 @@
 import { app, type Pantalla } from '../app';
 import { audio } from '../audio';
 import { MODOS, type Dificultad } from '../core/dificultad';
+import { entrarPantallaCompleta, salirPantallaCompleta } from '../fullscreen';
 import { vibrar } from '../haptica';
 import { configPorDefecto, type Configuracion } from '../settings/settings';
 import { VERSION } from '../version';
@@ -11,6 +12,7 @@ type Clave = keyof Configuracion;
 
 function cambiar<K extends Clave>(clave: K, valor: Configuracion[K]): void {
   app.g.config[clave] = valor;
+  if (clave === 'pantallaCompleta') (valor ? entrarPantallaCompleta : salirPantallaCompleta)();
   app.guardar();
   app.aplicarConfig();
 }
@@ -147,6 +149,7 @@ export function panelConfiguracion(opciones: { enJuego?: boolean } = {}): HTMLEl
         segmentado('calidad', [['auto', 'Auto'], ['baja', 'Baja'], ['media', 'Media'], ['alta', 'Alta']], 'Calidad'),
         'En «Auto» se mide tu celular y se baja la calidad sola si la partida va lenta.',
       ),
+      opcion('Pantalla completa', siNo('pantallaCompleta', 'Pantalla completa'), 'Se activa al tocar la pantalla.'),
       opcion('Límite de FPS', segmentado('fps', [[30, '30'], [60, '60'], [0, 'Máximo']], 'Límite de FPS'), '30 FPS ahorra batería.'),
       opcion('Mostrar FPS', siNo('mostrarFps', 'Mostrar FPS')),
     ),

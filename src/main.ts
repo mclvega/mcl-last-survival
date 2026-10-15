@@ -2,6 +2,7 @@ import './styles/main.css';
 
 import { app } from './app';
 import { audio } from './audio';
+import { iniciarPantallaCompleta } from './fullscreen';
 import { efectos } from './fx/loop';
 import { pantallaAcerca } from './ui/acerca';
 import { pantallaBienvenida } from './ui/bienvenida';
@@ -24,6 +25,7 @@ app.registrar('configuracion', pantallaConfiguracion);
 app.registrar('acerca', pantallaAcerca);
 
 efectos.montar();
+iniciarPantallaCompleta(() => app.g.config.pantallaCompleta);
 app.montar(document.getElementById('app')!);
 app.aplicarConfig();
 app.ir(app.g.nombre || app.g.invitado ? 'inicio' : 'bienvenida');
