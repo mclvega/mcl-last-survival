@@ -58,5 +58,6 @@ export function anillos(n: number): number {
 export function radioEscuadra(n: number): number {
   if (n <= 1) return 9;
   const base = anillos(n) * ESPACIADO + 8;
-  return n > MAX_VISIBLES ? base + (Math.sqrt(n) - Math.sqrt(MAX_VISIBLES)) * 4 : base;
+  // Más allá de los visibles crece poco y con tope, para que el escuadrón quepa en el carril.
+  return n > MAX_VISIBLES ? Math.min(base + 14, base + (Math.sqrt(n) - Math.sqrt(MAX_VISIBLES)) * 4) : base;
 }

@@ -9,9 +9,9 @@ export type Dificultad = 'facil' | 'normal' | 'dificil' | 'experto' | 'pesadilla
 export const MODOS: Record<Dificultad, { nombre: string; icono: string; fraccion: [number, number] }> = {
   facil: { nombre: 'Fácil', icono: '🙂', fraccion: [0.75, 1] },
   normal: { nombre: 'Normal', icono: '😐', fraccion: [1, 1.35] },
-  dificil: { nombre: 'Difícil', icono: '😈', fraccion: [1.4, 1.9] },
-  experto: { nombre: 'Experto', icono: '🔥', fraccion: [1.6, 2.1] },
-  pesadilla: { nombre: 'Pesadilla', icono: '💀', fraccion: [2, 2.6] },
+  dificil: { nombre: 'Difícil', icono: '😈', fraccion: [1.6, 2.2] },
+  experto: { nombre: 'Experto', icono: '🔥', fraccion: [1.9, 2.5] },
+  pesadilla: { nombre: 'Pesadilla', icono: '💀', fraccion: [2.3, 3] },
 };
 
 /** Cada 10 niveles hay un jefe especial (premio doble) y cada 5 un nivel de descanso. */

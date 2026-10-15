@@ -75,6 +75,15 @@ describe('pasillo lateral', () => {
   });
 });
 
+describe('tope de soldados', () => {
+  test('lo que pasa del tope se convierte en monedas', () => {
+    const m = new Mundo(nivelCon([{ tipo: 'puertas', y: 100, a: { op: 'suma', valor: 50 }, b: { op: 'suma', valor: 50 } }]), { ...stats, soldados: 980 });
+    avanzar(m, 2.5);
+    expect(m.soldados).toBe(999);
+    expect(m.monedas).toBeGreaterThanOrEqual(31);
+  });
+});
+
 describe('combate', () => {
   test('el escuadrón dispara y mata a un zombi que viene de frente', () => {
     const m = new Mundo(nivelCon([{ tipo: 'zombi', y: 400, x: ANCHO / 2, z: 'caminante', vida: 20 }]), stats);

@@ -494,7 +494,14 @@ export class Mundo {
 
   private cambiarSoldados(delta: number): void {
     if (delta < 0) this.perdidos += -delta;
-    this.soldados = Math.max(0, Math.min(MAX_SOLDADOS, this.soldados + delta));
+    const nuevo = this.soldados + delta;
+    if (nuevo > MAX_SOLDADOS) {
+      // Al llegar al tope, cada soldado de más se convierte en una moneda.
+      const sobra = nuevo - MAX_SOLDADOS;
+      this.monedas += sobra;
+      this.evento({ t: 'moneda', x: this.x, y: this.y + 30, valor: sobra });
+    }
+    this.soldados = Math.max(0, Math.min(MAX_SOLDADOS, nuevo));
     this.maxSoldados = Math.max(this.maxSoldados, this.soldados);
   }
 
@@ -576,8 +583,9 @@ export class Mundo {
           // El daño que sobra sigue de largo (así un grupo grande no desperdicia balas).
           dano = Math.min(b.dano, o.vida);
           b.dano -= dano;
-          if (b.dano <= 0.01) b.vivo = false;
-          else if (b.golpeados.length < 8) b.golpeados.push(o.id);
+          // El daño que sobra sigue a lo sumo hasta 3 zombis (un escuadrón enorme no barre columnas enteras).
+          if (b.dano <= 0.01 || b.golpeados.length >= 2) b.vivo = false;
+          else b.golpeados.push(o.id);
         }
         this.danar(o, dano);
         if (this.impactos < 6) {
@@ -630,7 +638,7 @@ export class Mundo {
       const p = f.pasillo;
       if (f.valor > p.mult) {
         const antes = this.soldados;
-        this.cambiarSoldados(Math.min(MAX_SOLDADOS, Math.round((this.soldados * f.valor) / p.mult)) - this.soldados);
+        this.cambiarSoldados(Math.round((this.soldados * f.valor) / p.mult) - this.soldados);
         p.mult = f.valor;
         this.evento({ t: 'puerta', x: this.x, y: this.y + 40, texto: '×' + f.valor + '  +' + (this.soldados - antes), buena: true });
       }
@@ -675,7 +683,8 @@ export class Mundo {
     b.vida = 0;
     this.evento({ t: 'barril', x: b.x, y: b.y, explosivo: b.explosivo });
     if (b.explosivo) {
-      this.explosiones.push({ x: b.x, y: b.y, r: 65, dano: this.dps() * 1.2 + 50 * this.nivel.escala, danaEscuadra: true });
+      // Barril explosivo: daño moderado en un área chica (no barre toda la horda).
+      this.explosiones.push({ x: b.x, y: b.y, r: 50, dano: this.dps() * 0.35 + 15 * this.nivel.escala, danaEscuadra: true });
       return;
     }
     if (!premio) return;

@@ -9,6 +9,7 @@ export const DIST_ACTIVACION = 820;
 /** Largo de cada tramo del nivel y punto donde empieza el primero. */
 export const LARGO_TRAMO = 760;
 export const INICIO = 420;
-export const MAX_SOLDADOS = 150;
+/** Tope de soldados. Lo que se gane por encima se convierte en monedas. */
+export const MAX_SOLDADOS = 999;
 /** Ancho del pasillo lateral con fichas (+1 o escalera ×k), separado por un muro bajo. */
 export const ANCHO_PASILLO = 90;
