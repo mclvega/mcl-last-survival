@@ -56,6 +56,12 @@ export class Bot {
           if (d < 120 && Math.abs(x - b.x) < r + b.r) p -= 60;
         }
       }
+      for (const pas of m.pasillos) {
+        const d = pas.y0 - m.y;
+        if (d > 450 || m.y > pas.y1) continue;
+        const borde = pas.lado === 0 ? 0 : ANCHO;
+        p += Math.max(0, 120 - Math.abs(x - borde)) * (pas.fichas[0]?.op === 'mult' ? 1.2 : 0.8);
+      }
       for (const z of m.zombis) {
         const d = z.y - m.y;
         if (d < 0 || d > 450) continue;

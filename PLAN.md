@@ -142,6 +142,7 @@ Un nivel es una lista de **tramos** de unos 8 a 12 segundos, elegidos de un cat�
 | `horda` | Oleada grande de caminantes y corredores |
 | `obstaculos` | Pinchos y ruedas, con barriles detrás como premio |
 | `elite` | Gordos, escupidores y explosivos |
+| `pasillo` | Pasillo lateral con muro bajo: columna de fichas **+1** o escalera **×2…×9** que se rompen a disparos (formato de los anuncios de Last Z y Mob Control) |
 | `descanso` | Monedas y un barril de soldados |
 | `jefe` | Siempre al final |
 

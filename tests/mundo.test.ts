@@ -43,6 +43,29 @@ describe('puertas', () => {
   });
 });
 
+describe('pasillo lateral', () => {
+  const fichasSuma = Array.from({ length: 5 }, (_, i) => ({ dy: 200 + i * 34, op: 'suma' as const, valor: 1, vida: 5 }));
+
+  test('las fichas +1 suman soldados al romperlas', () => {
+    const m = new Mundo(nivelCon([{ tipo: 'pasillo', y: 0, largo: 400, lado: 1, fichas: fichasSuma }]), stats);
+    avanzar(m, 6, ANCHO);
+    expect(m.soldados).toBe(stats.soldados + 5);
+  });
+
+  test('el muro no deja entrar al escuadrón en el pasillo', () => {
+    const m = new Mundo(nivelCon([{ tipo: 'pasillo', y: 0, largo: 400, lado: 1, fichas: fichasSuma }]), stats);
+    avanzar(m, 2, ANCHO);
+    expect(m.x).toBeLessThanOrEqual(ANCHO - 90);
+  });
+
+  test('la escalera aplica el mayor multiplicador roto al terminar', () => {
+    const fichas = [2, 3].map((k, i) => ({ dy: 150 + i * 60, op: 'mult' as const, valor: k, vida: 5 }));
+    const m = new Mundo(nivelCon([{ tipo: 'pasillo', y: 0, largo: 300, lado: 0, fichas }]), stats);
+    avanzar(m, 6, 0);
+    expect(m.soldados).toBe(stats.soldados * 3);
+  });
+});
+
 describe('combate', () => {
   test('el escuadrón dispara y mata a un zombi que viene de frente', () => {
     const m = new Mundo(nivelCon([{ tipo: 'zombi', y: 400, x: ANCHO / 2, z: 'caminante', vida: 20 }]), stats);

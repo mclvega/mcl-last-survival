@@ -10,3 +10,5 @@ export const DIST_ACTIVACION = 820;
 export const LARGO_TRAMO = 760;
 export const INICIO = 420;
 export const MAX_SOLDADOS = 150;
+/** Ancho del pasillo lateral con fichas (+1 o escalera ×k), separado por un muro bajo. */
+export const ANCHO_PASILLO = 90;

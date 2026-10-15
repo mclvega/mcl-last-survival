@@ -13,7 +13,8 @@ export type Evento =
   | { tipo: 'puertas'; y: number; a: DefPuerta; b: DefPuerta }
   | { tipo: 'pinchos'; y: number; x: number; ancho: number }
   | { tipo: 'rueda'; y: number; x: number; vel: number }
-  | { tipo: 'caja'; y: number; x: number; valor: number };
+  | { tipo: 'caja'; y: number; x: number; valor: number }
+  | { tipo: 'pasillo'; y: number; largo: number; lado: 0 | 1; fichas: Array<{ dy: number; op: 'suma' | 'mult'; valor: number; vida: number }> };
 
 export interface Nivel {
   n: number;
@@ -31,11 +32,11 @@ export interface Nivel {
 export function secuenciaTramos(p: ParamsNivel, rng: Rng): TipoTramo[] {
   if (p.n === 1) return ['calentamiento', 'barriles'];
   if (p.n === 2) return ['calentamiento', 'puertas', 'barriles'];
-  if (p.n === 3) return ['calentamiento', 'puertas', 'horda'];
-  const opciones: TipoTramo[] = ['puertas', 'barriles', 'horda'];
+  if (p.n === 3) return ['calentamiento', 'pasillo', 'horda'];
+  const opciones: TipoTramo[] = ['puertas', 'barriles', 'horda', 'pasillo'];
   if (p.obstaculos.length) opciones.push('obstaculos');
   if (p.zombis.includes('gordo')) opciones.push('elite');
-  const medios: TipoTramo[] = ['puertas', 'barriles'];
+  const medios: TipoTramo[] = p.numTramos >= 4 ? ['puertas', 'barriles', 'pasillo'] : ['pasillo', 'barriles'];
   while (medios.length < p.numTramos - 1) medios.push(pick(rng, opciones));
   shuffle(rng, medios);
   const secuencia: TipoTramo[] = ['calentamiento', ...medios];
@@ -103,7 +104,7 @@ export function generarHorda(dificultad: Dificultad, ref: Estadisticas, semilla 
   const p: ParamsNivel = { ...paramsNivel(40, dificultad), zombis: ['caminante', 'corredor', 'gordo', 'explosivo', 'escupidor'], obstaculos: ['pinchos', 'rueda'] };
   const b = base(`horda:${semilla}:${dificultad}`, p, ref);
   const nivel: Nivel = { n: 0, semilla, largo: Infinity, eventos: [], vidaJefe: 0, escala: b.escala };
-  const tipos: TipoTramo[] = ['puertas', 'barriles', 'horda', 'horda', 'obstaculos', 'elite', 'puertas'];
+  const tipos: TipoTramo[] = ['puertas', 'barriles', 'horda', 'horda', 'obstaculos', 'elite', 'pasillo'];
   let y = INICIO;
   let i = 0;
   nivel.extender = (hasta) => {

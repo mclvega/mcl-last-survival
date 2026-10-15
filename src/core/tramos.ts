@@ -1,4 +1,4 @@
-import { ANCHO, MAX_SOLDADOS } from './constantes';
+import { ANCHO, ANCHO_PASILLO, MAX_SOLDADOS } from './constantes';
 import type { ParamsNivel } from './dificultad';
 import { soldadosTrasPuerta, valorEquivalente, type DefPuerta, type Premio } from './elementos';
 import { ZOMBIS, type TipoZombi } from './enemigos';
@@ -7,7 +7,7 @@ import { NIVEL_ARMA_MAX } from './armas';
 import type { Rng } from './rng';
 
 /** Plantillas de tramos (unos 10 segundos cada uno) con las que se arma un nivel. */
-export type TipoTramo = 'calentamiento' | 'puertas' | 'barriles' | 'horda' | 'obstaculos' | 'elite' | 'descanso';
+export type TipoTramo = 'calentamiento' | 'puertas' | 'barriles' | 'horda' | 'obstaculos' | 'elite' | 'descanso' | 'pasillo';
 
 /** Lo que se espera que tenga el escuadrón en este punto del nivel. */
 export interface EstadoEsperado {
@@ -27,6 +27,9 @@ export interface Contexto {
   params: ParamsNivel;
   estado: EstadoEsperado;
   eventos: Evento[];
+  /** Zona donde pueden aparecer los zombis (se achica cuando hay pasillo lateral). */
+  xMin?: number;
+  xMax?: number;
 }
 
 /** Parte del poder del escuadrón que se convierte en zombis según el tipo de tramo. */
@@ -38,6 +41,7 @@ export const FACTOR_TRAMO: Record<TipoTramo, number> = {
   obstaculos: 0.55,
   elite: 1,
   descanso: 0.3,
+  pasillo: 0.6,
 };
 
 const SOLDADOS_ESPERADOS_MAX = MAX_SOLDADOS;
@@ -59,7 +63,9 @@ function grupo(c: Contexto, y: number, alto: number, presupuesto: number, desead
   const promedio = vidas.reduce((a, b) => a + b, 0) / vidas.length;
   // Tope de cantidad: si harían falta demasiados, cada uno es más fuerte.
   const mult = Math.max(1, presupuesto / promedio / 60);
-  const centro = entre(c.rng, 80, ANCHO - 80);
+  const xMin = c.xMin ?? 16;
+  const xMax = c.xMax ?? ANCHO - 16;
+  const centro = entre(c.rng, xMin + 64, xMax - 64);
   const ancho = entre(c.rng, 90, 220);
   let gastado = 0;
   let cuenta = 0;
@@ -70,7 +76,7 @@ function grupo(c: Contexto, y: number, alto: number, presupuesto: number, desead
     c.eventos.push({
       tipo: 'zombi',
       z: tipos[i],
-      x: limitar(centro + (c.rng() - 0.5) * ancho, 16, ANCHO - 16),
+      x: limitar(centro + (c.rng() - 0.5) * ancho, xMin, xMax),
       y: y + c.rng() * alto,
       vida,
     });
@@ -178,7 +184,31 @@ function caja(c: Contexto, y: number, x = entre(c.rng, 40, ANCHO - 40)): void {
   c.eventos.push({ tipo: 'caja', y, x, valor: Math.round(8 + c.params.n / 3) });
 }
 
+/**
+ * Pasillo lateral: una columna de fichas «+1» (cada una suma un soldado) o una
+ * escalera «×2 … ×9» (se aplica el multiplicador más alto que se rompa).
+ */
+function pasillo(c: Contexto): void {
+  const lado: 0 | 1 = c.rng() < 0.5 ? 0 : 1;
+  const fichas: Array<{ dy: number; op: 'suma' | 'mult'; valor: number; vida: number }> = [];
+  const escalera = c.params.n >= 6 && c.rng() < 0.45;
+  if (escalera) {
+    for (let k = 2; k <= 9; k++) fichas.push({ dy: 120 + (k - 2) * 62, op: 'mult', valor: k, vida: c.dps * 0.25 * k ** 1.6 });
+    c.estado.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, c.estado.soldados * 2);
+  } else {
+    const cantidad = 14 + Math.floor(c.rng() * 5);
+    for (let i = 0; i < cantidad; i++) fichas.push({ dy: 60 + i * 34, op: 'suma', valor: 1, vida: c.dps * 0.1 });
+    c.estado.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, c.estado.soldados + cantidad * 0.6);
+  }
+  const largo = fichas[fichas.length - 1].dy + 60;
+  c.eventos.push({ tipo: 'pasillo', y: c.y0, largo, lado, fichas });
+  const zona = { ...c, xMin: lado === 0 ? ANCHO_PASILLO + 14 : 16, xMax: lado === 0 ? ANCHO - 16 : ANCHO - ANCHO_PASILLO - 14 };
+  grupo(zona, c.y0 + 150, 200, c.presupuesto * 0.5, ['caminante', 'caminante', 'corredor']);
+  grupo(zona, c.y0 + 460, 220, c.presupuesto * 0.5, ['caminante', 'gordo', 'explosivo']);
+}
+
 export const PLANTILLAS: Record<TipoTramo, (c: Contexto) => void> = {
+  pasillo,
   calentamiento: (c) => {
     barril(c, c.y0 + 120, undefined, 'soldados');
     grupo(c, c.y0 + 250, 140, c.presupuesto * 0.5, ['caminante']);

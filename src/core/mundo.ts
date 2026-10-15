@@ -1,7 +1,7 @@
 import { HEROES, type IdHeroe } from '../content/heroes';
 import { arma, NIVEL_ARMA_MAX } from './armas';
 import { Rejilla } from './colisiones';
-import { ANCHO, DIST_ACTIVACION, MAX_SOLDADOS, PASO, VEL_AVANCE } from './constantes';
+import { ANCHO, ANCHO_PASILLO, DIST_ACTIVACION, MAX_SOLDADOS, PASO, VEL_AVANCE } from './constantes';
 import { dpsEscuadra } from './dificultad';
 import { esBuena, soldadosTrasPuerta, textoPremio, textoPuerta, type DefPuerta, type Premio } from './elementos';
 import { DIST_ESCUPIDOR, DIST_JEFE, ZOMBIS, type TipoZombi } from './enemigos';
@@ -50,7 +50,38 @@ export interface Barril {
   flash: number;
 }
 
-type Blanco = Zombi | Barril;
+/** Ficha del pasillo lateral: se rompe a disparos. */
+export interface Ficha {
+  clase: 'f';
+  id: number;
+  x: number;
+  y: number;
+  /** Radio para la rejilla (medio ancho); el choque real es con el rectángulo. */
+  r: number;
+  w: number;
+  h: number;
+  vida: number;
+  vidaMax: number;
+  op: 'suma' | 'mult';
+  valor: number;
+  vivo: boolean;
+  marca: number;
+  flash: number;
+  pasillo: Pasillo;
+}
+
+export interface Pasillo {
+  y0: number;
+  y1: number;
+  lado: 0 | 1;
+  fichas: Ficha[];
+  /** Mayor multiplicador roto en la escalera. */
+  mult: number;
+  aplicado: boolean;
+  vivo: boolean;
+}
+
+type Blanco = Zombi | Barril | Ficha;
 
 export interface Bala {
   x: number;
@@ -216,6 +247,7 @@ export class Mundo {
   puertas: ParPuertas[] = [];
   obstaculos: Obstaculo[] = [];
   cajas: Caja[] = [];
+  pasillos: Pasillo[] = [];
   torreta: Torreta | null = null;
   jefe: Zombi | null = null;
   enJefe = false;
@@ -294,18 +326,27 @@ export class Mundo {
       if (this.y >= this.nivel.largo) this.llegarAlJefe();
     }
     const r = this.radio;
-    if (entrada.x !== null) {
-      const objetivo = Math.min(ANCHO - r, Math.max(r, entrada.x));
-      const d = objetivo - this.x;
-      const max = VEL_LATERAL * dt;
-      this.x += Math.abs(d) <= max ? d : Math.sign(d) * max;
+    // El muro del pasillo lateral limita el camino principal (las balas sí pasan).
+    let min = r;
+    let max = ANCHO - r;
+    for (const p of this.pasillos) {
+      if (this.y < p.y0 - 30 || this.y > p.y1 + 30) continue;
+      if (p.lado === 0) min = Math.max(min, ANCHO_PASILLO);
+      else max = Math.min(max, ANCHO - ANCHO_PASILLO);
     }
-    this.x = Math.min(ANCHO - r, Math.max(r, this.x));
+    if (entrada.x !== null) {
+      const objetivo = Math.min(max, Math.max(min, entrada.x));
+      const d = objetivo - this.x;
+      const vel = VEL_LATERAL * dt;
+      this.x += Math.abs(d) <= vel ? d : Math.sign(d) * vel;
+    }
+    this.x = Math.min(max, Math.max(min, this.x));
     if (this.invulnerable > 0) this.invulnerable -= dt;
 
     this.nivel.extender?.(this.y + DIST_ACTIVACION + 200);
     this.activarEventos();
     this.cruzarPuertas();
+    this.cerrarPasillos();
 
     if (this.recarga > 0) this.recarga = Math.max(0, this.recarga - dt);
     if (entrada.habilidad) this.usarHabilidad();
@@ -375,7 +416,7 @@ export class Mundo {
           id: ++this.ids,
           x: e.x,
           y: e.y,
-          r: e.explosivo ? 15 : 17,
+          r: e.explosivo ? 15 : e.premio === 'arma' ? 22 : 17,
           vida: e.vida,
           vidaMax: e.vida,
           premio: e.premio,
@@ -405,6 +446,16 @@ export class Mundo {
       case 'caja':
         this.cajas.push({ x: e.x, y: e.y, valor: e.valor, vivo: true });
         break;
+      case 'pasillo': {
+        const p: Pasillo = { y0: e.y, y1: e.y + e.largo, lado: e.lado, fichas: [], mult: 1, aplicado: false, vivo: true };
+        const w = ANCHO_PASILLO - 16;
+        const x = e.lado === 0 ? 8 + w / 2 : ANCHO - 8 - w / 2;
+        for (const f of e.fichas) {
+          p.fichas.push({ clase: 'f', id: ++this.ids, x, y: e.y + f.dy, r: w / 2, w, h: 22, vida: f.vida, vidaMax: f.vida, op: f.op, valor: f.valor, vivo: true, marca: 0, flash: 0, pasillo: p });
+        }
+        this.pasillos.push(p);
+        break;
+      }
     }
   }
 
@@ -504,10 +555,14 @@ export class Mundo {
       if (this.golpearPuertas(b)) continue;
       this.rejilla.consultar(b.x, b.y, b.r + 2, (o) => {
         if (!o.vivo || o.vida <= 0) return;
-        const dx = o.x - b.x;
-        const dy = o.y - b.y;
-        const rr = o.r + b.r;
-        if (dx * dx + dy * dy > rr * rr) return;
+        if (o.clase === 'f') {
+          if (Math.abs(o.x - b.x) > o.w / 2 + b.r || Math.abs(o.y - b.y) > o.h / 2 + b.r) return;
+        } else {
+          const dx = o.x - b.x;
+          const dy = o.y - b.y;
+          const rr = o.r + b.r;
+          if (dx * dx + dy * dy > rr * rr) return;
+        }
         if (b.golpeados.includes(o.id)) return;
         if (b.area > 0) {
           this.explosiones.push({ x: b.x, y: b.y, r: b.area, dano: b.dano, danaEscuadra: false });
@@ -561,7 +616,37 @@ export class Mundo {
     o.flash = 0.08;
     if (o.vida > 0) return;
     if (o.clase === 'z') this.matar(o, true);
-    else this.romperBarril(o, true);
+    else if (o.clase === 'b') this.romperBarril(o, true);
+    else this.romperFicha(o);
+  }
+
+  private romperFicha(f: Ficha): void {
+    f.vivo = false;
+    f.vida = 0;
+    this.evento({ t: 'barril', x: f.x, y: f.y, explosivo: false });
+    if (f.op === 'suma') {
+      this.cambiarSoldados(f.valor);
+      this.evento({ t: 'premio', x: f.x, y: f.y, texto: '+' + f.valor, bueno: true });
+    } else {
+      f.pasillo.mult = Math.max(f.pasillo.mult, f.valor);
+      this.evento({ t: 'sube', x: f.x, y: f.y });
+      this.evento({ t: 'premio', x: f.x, y: f.y, texto: '×' + f.valor, bueno: true });
+    }
+  }
+
+  /** Al terminar la escalera se aplica el mayor multiplicador roto. */
+  private cerrarPasillos(): void {
+    for (const p of this.pasillos) {
+      if (!p.aplicado && this.y > p.y1) {
+        p.aplicado = true;
+        if (p.mult > 1) {
+          this.cambiarSoldados(Math.min(MAX_SOLDADOS, this.soldados * p.mult) - this.soldados);
+          this.evento({ t: 'puerta', x: this.x, y: this.y + 40, texto: '×' + p.mult, buena: true });
+        }
+      }
+      for (const f of p.fichas) if (f.flash > 0) f.flash -= PASO;
+      if (p.y1 < this.y - 250) p.vivo = false;
+    }
   }
 
   private matar(z: Zombi, conMonedas: boolean): void {
@@ -735,6 +820,7 @@ export class Mundo {
     this.rejilla.limpiar();
     for (const z of this.zombis) if (z.vivo) this.rejilla.insertar(z);
     for (const b of this.barriles) if (b.vivo) this.rejilla.insertar(b);
+    for (const p of this.pasillos) for (const f of p.fichas) if (f.vivo && f.y - this.y < DIST_ACTIVACION) this.rejilla.insertar(f);
   }
 
   /** Empuje suave entre zombis para que no se apilen en un solo punto. */
@@ -926,6 +1012,7 @@ export class Mundo {
     compactar(this.barriles);
     compactar(this.obstaculos);
     compactar(this.cajas);
+    compactar(this.pasillos);
     if (this.puertas.length && this.puertas[0].y < this.y - 200) {
       this.puertas.forEach((p) => (p.vivo = p.y >= this.y - 200));
       compactar(this.puertas);

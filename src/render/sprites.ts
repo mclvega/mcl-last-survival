@@ -17,6 +17,8 @@ export interface Atlas {
   barril: Sprite;
   barrilFlash: Sprite;
   explosivo: Sprite;
+  cofre: Sprite;
+  cofreFlash: Sprite;
   caja: Sprite;
   rueda: Sprite;
   premios: Record<Premio, Sprite>;
@@ -187,6 +189,23 @@ function barril(ctx: CanvasRenderingContext2D, explosivo: boolean): void {
   circulo(ctx, -r * 0.4, -r * 0.45, r * 0.15, 'rgba(255,255,255,0.3)');
 }
 
+/** Cofre de acero para el premio de arma (más grande que un barril). */
+function cofre(ctx: CanvasRenderingContext2D): void {
+  sombra(ctx, 22);
+  ctx.fillStyle = '#3b5bdb';
+  ctx.strokeStyle = '#1c2f7a';
+  ctx.lineWidth = 2;
+  ctx.fillRect(-21, -19, 42, 38);
+  ctx.strokeRect(-21, -19, 42, 38);
+  ctx.fillStyle = '#5c7cfa';
+  ctx.fillRect(-21, -19, 42, 9);
+  // Franja de peligro abajo.
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = i % 2 ? '#212529' : '#fcc419';
+    ctx.fillRect(-21 + i * 7, 13, 7, 6);
+  }
+}
+
 function caja(ctx: CanvasRenderingContext2D): void {
   sombra(ctx, 12);
   ctx.fillStyle = '#c08a3e';
@@ -246,6 +265,7 @@ export function crearAtlas(escala: number, aspecto: Aspecto, colorHeroe: string)
   const premios = {} as Record<Premio, Sprite>;
   for (const p of Object.keys(PREMIOS) as Premio[]) premios[p] = crear(16, 16, escala, (ctx) => icono(ctx, PREMIOS[p].icono, 14));
   const barrilSprite = crear(40, 44, escala, (ctx) => barril(ctx, false));
+  const cofreSprite = crear(48, 50, escala, cofre);
   return {
     soldado: crear(14, 22, escala, (ctx) => soldado(ctx, aspecto, 1)),
     lider: crear(20, 30, escala, (ctx) => soldado(ctx, aspecto, 1.35, colorHeroe)),
@@ -254,6 +274,8 @@ export function crearAtlas(escala: number, aspecto: Aspecto, colorHeroe: string)
     barril: barrilSprite,
     barrilFlash: blanco(barrilSprite),
     explosivo: crear(36, 40, escala, (ctx) => barril(ctx, true)),
+    cofre: cofreSprite,
+    cofreFlash: blanco(cofreSprite),
     caja: crear(28, 30, escala, caja),
     rueda: crear(52, 52, escala, rueda),
     premios,

@@ -1,7 +1,7 @@
 import type { Aspecto } from '../content/aspectos';
 import type { Escenario } from '../content/escenarios';
 import { ARMAS } from '../core/armas';
-import { ANCHO } from '../core/constantes';
+import { ANCHO, ANCHO_PASILLO } from '../core/constantes';
 import { esBuena, textoPuerta } from '../core/elementos';
 import { MAX_VISIBLES, OFFSETS } from '../core/escuadra';
 import type { TipoZombi } from '../core/enemigos';
@@ -173,6 +173,7 @@ export class Escena {
     this.fondo(m, yMin, yMax);
     this.dibujarPuertas(m, yMin, yMax);
     this.dibujarObstaculos(m, alfa, yMin, yMax);
+    this.dibujarPasillos(m, yMin, yMax);
     this.dibujarCajasYBarriles(m, yMin, yMax);
     this.dibujarZombis(m, alfa, yMin, yMax);
     this.dibujarEscuadra(m, alfa);
@@ -335,10 +336,64 @@ export class Escena {
     ctx.textBaseline = 'middle';
     for (const b of m.barriles) {
       if (b.y < yMin || b.y > yMax) continue;
+      if (b.premio === 'arma' && !b.explosivo) {
+        // Cofre de arma: número grande y el premio flotando encima.
+        this.sprite(b.flash > 0 ? atlas.cofreFlash : atlas.cofre, b.x, b.y);
+        this.fuente(15);
+        this.textoContorno(formato(b.vida), this.sx(b.x), this.sy(b.y - 1), '#ffffff');
+        this.sprite(atlas.premios.arma, b.x, b.y + 30 + Math.sin(this.reloj * 4 + b.id) * 2, 1.5);
+        continue;
+      }
       this.sprite(b.explosivo ? atlas.explosivo : b.flash > 0 ? atlas.barrilFlash : atlas.barril, b.x, b.y);
       this.fuente(11);
       this.textoContorno(formato(b.vida), this.sx(b.x), this.sy(b.y), '#ffffff');
       if (!b.explosivo) this.sprite(atlas.premios[b.premio], b.x, b.y + b.r + 9 + Math.sin(this.reloj * 4 + b.id) * 1.5);
+    }
+  }
+
+  /** Pasillo lateral: carril elevado con muro bajo y fichas «+1» (azules) o «×k» (moradas). */
+  private dibujarPasillos(m: Mundo, yMin: number, yMax: number): void {
+    const ctx = this.ctx;
+    const esc = this.esc;
+    for (const p of m.pasillos) {
+      if (p.y1 < yMin || p.y0 > yMax) continue;
+      const x0 = p.lado === 0 ? 0 : ANCHO - ANCHO_PASILLO;
+      const top = this.sy(Math.min(p.y1 + 20, yMax));
+      const bottom = this.sy(Math.max(p.y0 - 20, yMin));
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+      ctx.fillRect(this.sx(x0), top, ANCHO_PASILLO * esc, bottom - top);
+      // Muro bajo (las balas pasan por encima).
+      const xm = p.lado === 0 ? ANCHO_PASILLO : ANCHO - ANCHO_PASILLO;
+      ctx.fillStyle = '#868e96';
+      ctx.fillRect(this.sx(xm) - 3 * esc, top, 6 * esc, bottom - top);
+      ctx.fillStyle = '#ced4da';
+      ctx.fillRect(this.sx(xm) - 3 * esc, top, 2 * esc, bottom - top);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (const f of p.fichas) {
+        if (!f.vivo || f.y < yMin || f.y > yMax) continue;
+        const mult = f.op === 'mult';
+        const w = f.w * esc;
+        const h = f.h * esc;
+        const sx = this.sx(f.x) - w / 2;
+        const sy = this.sy(f.y) - h / 2;
+        // Canto (da volumen) y cara.
+        ctx.fillStyle = mult ? '#5f3dc4' : '#1971c2';
+        ctx.fillRect(sx, sy + h * 0.25, w, h);
+        ctx.fillStyle = f.flash > 0 ? '#ffffff' : mult ? '#9775fa' : '#4dabf7';
+        ctx.fillRect(sx, sy, w, h);
+        ctx.strokeStyle = mult ? '#e5dbff' : '#d0ebff';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(sx, sy, w, h);
+        // Daño: la ficha se oscurece a medida que pierde vida.
+        const dano = 1 - f.vida / f.vidaMax;
+        if (dano > 0) {
+          ctx.fillStyle = 'rgba(0, 0, 0, ' + (dano * 0.45).toFixed(2) + ')';
+          ctx.fillRect(sx, sy, w, h);
+        }
+        this.fuente(mult ? 16 : 15);
+        this.textoContorno((mult ? '×' : '+') + f.valor, this.sx(f.x), this.sy(f.y), '#ffffff');
+      }
     }
   }
 
@@ -351,6 +406,20 @@ export class Escena {
       if (y < yMin || y > yMax) continue;
       const x = lerp(z.px, z.x, alfa) + Math.sin(this.reloj * 6 + z.id) * 0.8;
       this.sprite(z.flash > 0 ? atlas.zombisFlash[z.tipo] : atlas.zombis[z.tipo], x, y);
+      if (z.tipo === 'jefe') {
+        const w = 90 * this.esc;
+        const sx = this.sx(x) - w / 2;
+        const sy = this.sy(y + z.r + 22);
+        ctx.fillStyle = '#c92a2a';
+        ctx.fillRect(sx, sy, w, 16 * this.esc);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(sx, sy, w, 16 * this.esc);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        this.fuente(14);
+        this.textoContorno(formato(Math.max(0, z.vida)), this.sx(x), sy + 8 * this.esc, '#ffffff');
+      }
       if (z.tipo === 'gordo' && z.vida < z.vidaMax) {
         const w = 28 * this.esc;
         const sx = this.sx(x) - w / 2;
