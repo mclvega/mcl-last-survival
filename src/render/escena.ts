@@ -1,5 +1,5 @@
 import type { Aspecto } from '../content/aspectos';
-import type { Escenario } from '../content/escenarios';
+import type { Escenario, Prop, VarianteMapa } from '../content/escenarios';
 import { ARMAS } from '../core/armas';
 import { ANCHO, ANCHO_PASILLO } from '../core/constantes';
 import { esBuena, textoPuerta } from '../core/elementos';
@@ -39,6 +39,14 @@ type Dibujable =
 
 const FACTOR_CALIDAD: Record<CalidadEfectiva, number> = { baja: 0.3, media: 0.6, alta: 1 };
 const COLOR_POLVO: Partial<Record<TipoZombi, string>> = { escupidor: '#d4e157', explosivo: '#ff922b', jefe: '#c98a5a', divisor: '#b197fc' };
+const TINTE_HORA: Record<VarianteMapa['hora'], string | null> = {
+  manana: null,
+  tarde: 'rgba(255, 196, 120, 0.12)',
+  atardecer: 'rgba(255, 110, 60, 0.2)',
+  noche: 'rgba(10, 20, 55, 0.38)',
+};
+const COLORES_CASA = ['#e8590c', '#f08c00', '#2f9e44', '#1971c2', '#c2255c', '#f1f3f5', '#e9c46a', '#8d6e63'];
+const COLORES_AUTO = ['#e03131', '#1c7ed6', '#f1f3f5', '#212529', '#fab005'];
 const FUENTE = 'system-ui, "Segoe UI", Roboto, sans-serif';
 /** Profundidad (unidades) de la cámara detrás del escuadrón. */
 const D0 = 270;
@@ -85,7 +93,7 @@ export class Escena {
   constructor(
     private readonly lienzo: HTMLCanvasElement,
     private readonly escenario: Escenario,
-    private readonly noche: boolean,
+    private readonly variante: VarianteMapa,
     private readonly aspecto: Aspecto,
     private readonly colorHeroe: string,
   ) {
@@ -252,7 +260,7 @@ export class Escena {
     // Manchas y grietas deterministas por trozos.
     const trozo = 160;
     for (let k = Math.floor(yMin / trozo); k * trozo < yMax; k++) {
-      const r = mulberry32(k * 2654435761);
+      const r = mulberry32((k * 2654435761) ^ this.variante.semilla);
       const x = P + 10 + r() * (ANCHO - 2 * P - 40);
       const y = k * trozo + r() * trozo;
       this.cuad([[x, y, 0], [x + 14 + r() * 16, y, 0], [x + 18, y + 10 + r() * 10, 0], [x + 2, y + 12, 0]], e.detalle);
@@ -269,6 +277,8 @@ export class Escena {
         }
       }
     }
+
+    this.decorado(yMin, yMax);
 
     // Muros metálicos bajos entre los pasillos y el camino (cara interior y borde superior).
     for (const xm of [P, ANCHO - P]) {
@@ -299,10 +309,152 @@ export class Escena {
     bruma.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = bruma;
     ctx.fillRect(-30, -2, this.cssW + 60, this.cssH * 0.18);
-    if (this.noche) {
-      ctx.fillStyle = 'rgba(8, 16, 40, 0.3)';
+    // Luz según la hora del día de este nivel.
+    const tinte = TINTE_HORA[this.variante.hora];
+    if (tinte) {
+      ctx.fillStyle = tinte;
       ctx.fillRect(-30, -30, this.cssW + 60, this.cssH + 60);
     }
+  }
+
+  /** Objetos a los costados del camino; cada nivel los coloca y colorea distinto. */
+  private decorado(yMin: number, yMax: number): void {
+    const props = this.escenario.props;
+    if (!props.length) return;
+    const trozo = 110;
+    const desde = Math.floor(yMin / trozo);
+    for (let k = Math.ceil(yMax / trozo); k >= desde; k--) {
+      const r = mulberry32((k * 374761393) ^ this.variante.semilla);
+      for (const lado of [0, 1]) {
+        if (r() < 0.25) continue;
+        const prop = props[Math.floor(r() * props.length)];
+        const x = lado === 0 ? -22 - r() * 50 : ANCHO + 22 + r() * 50;
+        const y = k * trozo + r() * trozo;
+        if (y < yMin || y > yMax) continue;
+        this.dibujarProp(prop, x, y, r);
+      }
+    }
+  }
+
+  private dibujarProp(prop: Prop, x: number, y: number, r: () => number): void {
+    if (!this.proy(x, y, 0)) return;
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.translate(this.X, this.Y);
+    ctx.scale(this.K, this.K);
+    const relleno = (c: string) => (ctx.fillStyle = c);
+    switch (prop) {
+      case 'casa': {
+        const color = COLORES_CASA[Math.floor(r() * COLORES_CASA.length)];
+        const w = 44 + r() * 20;
+        const h = 30 + r() * 18;
+        relleno('rgba(0,0,0,0.25)');
+        ctx.fillRect(-w / 2, -3, w, 5);
+        relleno(color);
+        ctx.fillRect(-w / 2, -h, w, h);
+        relleno('#7a2e1f');
+        ctx.beginPath();
+        ctx.moveTo(-w / 2 - 4, -h);
+        ctx.lineTo(0, -h - 18);
+        ctx.lineTo(w / 2 + 4, -h);
+        ctx.fill();
+        relleno('#cfe8ff');
+        ctx.fillRect(-w / 2 + 6, -h + 8, 10, 9);
+        ctx.fillRect(w / 2 - 16, -h + 8, 10, 9);
+        relleno('#5c3d2e');
+        ctx.fillRect(-5, -16, 10, 16);
+        break;
+      }
+      case 'arbol': {
+        relleno('#6b4423');
+        ctx.fillRect(-3, -22, 6, 22);
+        const verde = r() < 0.5 ? '#2f9e44' : '#5c940d';
+        relleno(verde);
+        for (const [cx, cy, cr] of [[0, -34, 15], [-9, -26, 10], [9, -27, 10]]) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'palmera': {
+        ctx.strokeStyle = '#8d6e63';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(6, -24, 2, -46);
+        ctx.stroke();
+        ctx.strokeStyle = '#2b8a3e';
+        ctx.lineWidth = 4;
+        for (const a of [-2.6, -2.1, -1.6, -1, -0.5]) {
+          ctx.beginPath();
+          ctx.moveTo(2, -46);
+          ctx.quadraticCurveTo(2 + Math.cos(a) * 14, -50, 2 + Math.cos(a) * 24, -46 - Math.sin(a) * 12);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'poste': {
+        relleno('#495057');
+        ctx.fillRect(-1.5, -58, 3, 58);
+        ctx.fillRect(-1.5, -58, 14, 3);
+        relleno(this.variante.hora === 'noche' || this.variante.hora === 'atardecer' ? '#ffe066' : '#dee2e6');
+        ctx.fillRect(8, -56, 7, 4);
+        break;
+      }
+      case 'auto': {
+        const color = COLORES_AUTO[Math.floor(r() * COLORES_AUTO.length)];
+        relleno('rgba(0,0,0,0.3)');
+        ctx.fillRect(-20, -3, 40, 5);
+        relleno(color);
+        ctx.fillRect(-20, -14, 40, 11);
+        ctx.fillRect(-12, -22, 24, 9);
+        relleno('#a5d8ff');
+        ctx.fillRect(-10, -20, 9, 6);
+        ctx.fillRect(1, -20, 9, 6);
+        relleno('#212529');
+        ctx.beginPath();
+        ctx.arc(-12, -3, 4, 0, Math.PI * 2);
+        ctx.arc(12, -3, 4, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+      case 'roca': {
+        relleno(r() < 0.5 ? '#868e96' : '#a49384');
+        ctx.beginPath();
+        ctx.moveTo(-16, 0);
+        ctx.lineTo(-12, -12);
+        ctx.lineTo(-2, -18);
+        ctx.lineTo(10, -13);
+        ctx.lineTo(16, 0);
+        ctx.fill();
+        break;
+      }
+      case 'moai': {
+        // Moái: cabeza alargada de piedra con nariz y cejas marcadas.
+        relleno('rgba(0,0,0,0.25)');
+        ctx.fillRect(-14, -3, 28, 5);
+        relleno('#6c6560');
+        ctx.fillRect(-11, -22, 22, 22);
+        relleno('#7d756e');
+        ctx.beginPath();
+        ctx.moveTo(-10, -22);
+        ctx.lineTo(-11, -62);
+        ctx.quadraticCurveTo(0, -70, 11, -62);
+        ctx.lineTo(10, -22);
+        ctx.fill();
+        relleno('#4a4440');
+        ctx.fillRect(-9, -52, 18, 4);
+        ctx.fillRect(-2, -48, 5, 16);
+        ctx.fillRect(-6, -30, 12, 3);
+        if (r() < 0.4) {
+          relleno('#a5462a');
+          ctx.fillRect(-9, -72, 18, 8);
+        }
+        break;
+      }
+    }
+    ctx.restore();
   }
 
   private fuente(tam: number): void {

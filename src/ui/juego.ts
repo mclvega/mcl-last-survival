@@ -1,7 +1,7 @@
 import { app, type Pantalla } from '../app';
 import { audio } from '../audio';
 import { ASPECTOS_POR_ID } from '../content/aspectos';
-import { ESCENARIOS, ubicarNivel } from '../content/escenarios';
+import { ESCENARIOS, ubicarNivel, varianteMapa } from '../content/escenarios';
 import { HEROES } from '../content/heroes';
 import { arma } from '../core/armas';
 import { generarNivelValidado } from '../core/bot';
@@ -114,7 +114,8 @@ export function pantallaJuego(params: Record<string, unknown>): Pantalla {
       : generarNivelValidado(p!, estadisticasReferencia(n));
     mundo = new Mundo(nivel, stats);
     if (estres) mundo.estres(500);
-    escena = new Escena(lienzo, escenario, ub.vuelta % 2 === 0, ASPECTOS_POR_ID.get(g.aspecto)!, heroe.color);
+    // Cada nivel tiene su variante de mapa (hora del día y decorado); en la Horda cambia en cada partida.
+    escena = new Escena(lienzo, escenario, varianteMapa(horda ? Date.now() % 100000 : n), ASPECTOS_POR_ID.get(g.aspecto)!, heroe.color);
     escena.sacudidaActiva = g.config.sacudida;
     ajustarTamano();
     preparando.remove();

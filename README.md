@@ -14,7 +14,7 @@ Shooter de supervivencia vertical para el navegador, pensado primero para celula
 - **Obstáculos:** pinchos y ruedas que ruedan.
 - **5 dificultades** (Fácil, Normal, Difícil, Experto y Pesadilla) con hordas grandes; cada nivel se valida con un bot y, si es imposible, se regenera más suave.
 - **Niveles infinitos:** se generan con una semilla, así el nivel N es igual para todos. Un bot comprueba que se pueden ganar y, si pierde, el nivel se regenera con menos zombis.
-- **Capítulos de 10 niveles:** 9 escenarios distintos (Calle Kuyen, Calle Amuyen, Población La Conquista, Colonia Kennedy y más) y un jefe especial cada 10 niveles, que da premio doble. Desde el nivel 11 se desbloquea el **Modo Horda**, un camino sin fin para batir tu récord.
+- **Capítulos de 10 niveles:** 10 escenarios (Calle Kuyen, Calle Amuyen, Población La Conquista, Colonia Kennedy, Isla de Pascua y más); cada nivel regenera su mapa con otra hora del día y otro decorado (casas, árboles, autos, palmeras, moáis…) y un jefe especial cada 10 niveles, que da premio doble. Desde el nivel 11 se desbloquea el **Modo Horda**, un camino sin fin para batir tu récord.
 - **Refugio:** 5 edificios con mejoras permanentes. **Héroes** con una habilidad y un efecto pasivo, sin gacha. **Aspectos** para el escuadrón, **misiones** y **recompensa diaria**.
 - **Sin compras ni anuncios.** La segunda oportunidad se paga con fichas o monedas que se ganan jugando.
 - **PWA:** se puede instalar en la pantalla de inicio y funciona sin conexión.
