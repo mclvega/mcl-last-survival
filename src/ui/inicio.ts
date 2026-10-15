@@ -4,6 +4,7 @@ import { ESCENARIOS, ubicarNivel } from '../content/escenarios';
 import { HEROES } from '../content/heroes';
 import { DIARIA, claveDia, diaDeRacha, misionesListas, puedeReclamarDiaria, reclamarDiaria } from '../economy/wallet';
 import { efectos } from '../fx/loop';
+import { VERSION } from '../version';
 import { abrirModal, avisar, boton, h } from './dom';
 import { chipMonedas, logo } from './componentes';
 
@@ -129,6 +130,7 @@ export function pantallaInicio(): Pantalla {
           })
         : null,
     ),
+    h('p', { class: 'version', text: `v${VERSION}` }),
   );
   return { el };
 }
