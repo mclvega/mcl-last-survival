@@ -675,7 +675,7 @@ export class Mundo {
     b.vida = 0;
     this.evento({ t: 'barril', x: b.x, y: b.y, explosivo: b.explosivo });
     if (b.explosivo) {
-      this.explosiones.push({ x: b.x, y: b.y, r: 80, dano: this.dps() * 1.2 + 50 * this.nivel.escala, danaEscuadra: true });
+      this.explosiones.push({ x: b.x, y: b.y, r: 65, dano: this.dps() * 1.2 + 50 * this.nivel.escala, danaEscuadra: true });
       return;
     }
     if (!premio) return;
@@ -720,8 +720,9 @@ export class Mundo {
       if (e.danaEscuadra) {
         const dx = this.x - e.x;
         const dy = this.y - e.y;
-        const rr = e.r + this.radio * 0.6;
-        if (dx * dx + dy * dy <= rr * rr) this.perderSoldados(2, this.x, this.y);
+        // Las explosiones solo alcanzan al escuadrón si están muy cerca, y quitan 1 soldado.
+        const rr = e.r * 0.6 + this.radio * 0.4;
+        if (dx * dx + dy * dy <= rr * rr) this.perderSoldados(1, this.x, this.y);
       }
     }
     this.explosiones.length = 0;
