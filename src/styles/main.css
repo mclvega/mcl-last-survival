@@ -38,7 +38,6 @@
 html {
   font-size: var(--fs-base);
   -webkit-text-size-adjust: 100%;
-  overscroll-behavior: none;
 }
 
 body {
@@ -52,12 +51,16 @@ body {
     linear-gradient(180deg, #141920 0%, #0b0e12 100%) fixed;
   background-color: var(--bg);
   overflow-x: hidden;
-  overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Durante la partida no se desplaza la página ni se selecciona texto. */
+/* Durante la partida no se desplaza la página, no se selecciona texto y deslizar
+   hacia abajo no la recarga. En los menús sí se puede actualizar deslizando. */
+html:has(body[data-pantalla='juego']) {
+  overscroll-behavior: none;
+}
 body[data-pantalla='juego'] {
+  overscroll-behavior: none;
   overflow: hidden;
   position: fixed;
   inset: 0;
