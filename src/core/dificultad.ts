@@ -4,12 +4,14 @@ import { ZOMBIS, type TipoZombi } from './enemigos';
 import type { Estadisticas } from './escuadra';
 import { rngFrom } from './rng';
 
-export type Dificultad = 'facil' | 'normal' | 'dificil';
+export type Dificultad = 'facil' | 'normal' | 'dificil' | 'experto' | 'pesadilla';
 
 export const MODOS: Record<Dificultad, { nombre: string; icono: string; fraccion: [number, number] }> = {
-  facil: { nombre: 'Fácil', icono: '🙂', fraccion: [0.6, 0.85] },
-  normal: { nombre: 'Normal', icono: '😐', fraccion: [0.85, 1.2] },
-  dificil: { nombre: 'Difícil', icono: '😈', fraccion: [1.15, 1.55] },
+  facil: { nombre: 'Fácil', icono: '🙂', fraccion: [0.75, 1] },
+  normal: { nombre: 'Normal', icono: '😐', fraccion: [1, 1.35] },
+  dificil: { nombre: 'Difícil', icono: '😈', fraccion: [1.3, 1.75] },
+  experto: { nombre: 'Experto', icono: '🔥', fraccion: [1.6, 2.1] },
+  pesadilla: { nombre: 'Pesadilla', icono: '💀', fraccion: [2, 2.6] },
 };
 
 /** Cada 10 niveles hay un jefe especial (premio doble) y cada 5 un nivel de descanso. */

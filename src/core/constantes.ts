@@ -3,7 +3,7 @@ export const ANCHO = 360;
 /** Paso fijo de la simulación. */
 export const PASO = 1 / 60;
 /** Velocidad con la que avanza el escuadrón. */
-export const VEL_AVANCE = 75;
+export const VEL_AVANCE = 56;
 /** Los elementos del nivel aparecen cuando están a esta distancia por delante. */
 export const DIST_ACTIVACION = 820;
 /** Largo de cada tramo del nivel y punto donde empieza el primero. */

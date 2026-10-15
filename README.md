@@ -11,7 +11,7 @@ Shooter de supervivencia vertical para el navegador, pensado primero para celula
 - **10 armas:** pistola, subfusil, escopeta, rifle, ametralladora, lanzallamas, lanzacohetes, láser, rayo tesla y cañón de plasma.
 - **10 tipos de zombi:** caminante, corredor, perro, gordo, blindado, explosivo, escupidor, divisor (se parte en tres), gigante y el jefe por fases. Van apareciendo a medida que se avanza.
 - **Obstáculos:** pinchos y ruedas que ruedan.
-- **Dificultad alta:** hordas grandes; cada nivel se valida con un bot y, si es imposible, se regenera más suave.
+- **5 dificultades** (Fácil, Normal, Difícil, Experto y Pesadilla) con hordas grandes; cada nivel se valida con un bot y, si es imposible, se regenera más suave.
 - **Niveles infinitos:** se generan con una semilla, así el nivel N es igual para todos. Un bot comprueba que se pueden ganar y, si pierde, el nivel se regenera con menos zombis.
 - **Capítulos de 10 niveles:** 8 escenarios distintos y un jefe especial cada 10 niveles, que da premio doble. Desde el nivel 11 se desbloquea el **Modo Horda**, un camino sin fin para batir tu récord.
 - **Refugio:** 5 edificios con mejoras permanentes. **Héroes** con una habilidad y un efecto pasivo, sin gacha. **Aspectos** para el escuadrón, **misiones** y **recompensa diaria**.

@@ -1,4 +1,4 @@
-import { ANCHO } from './constantes';
+import { ANCHO, VEL_AVANCE } from './constantes';
 import type { ParamsNivel } from './dificultad';
 import { valorEquivalente } from './elementos';
 import type { Estadisticas } from './escuadra';
@@ -107,7 +107,7 @@ export function generarNivelValidado(p: ParamsNivel, ref: Estadisticas): Nivel {
   for (let intento = 0; intento < 6; intento++) {
     nivel = generarNivel(p, ref, intento);
     // El bot debe ganar en un tiempo razonable (el camino más un minuto de jefe).
-    if (simular(nivel, ref, nivel.largo / 75 + 60).estado === 'victoria') return nivel;
+    if (simular(nivel, ref, nivel.largo / VEL_AVANCE + 60).estado === 'victoria') return nivel;
   }
   return nivel;
 }

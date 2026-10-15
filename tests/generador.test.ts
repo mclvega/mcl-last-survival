@@ -74,7 +74,7 @@ describe('generador de niveles', () => {
 describe('niveles ganables (bot)', () => {
   // El juego valida cada nivel con el bot y, si lo pierde, lo regenera con menos
   // zombis. Los niveles que se juegan deben poder ganarse casi siempre.
-  test.each(DIFICULTADES)('dificultad %s', (dif) => {
+  test.each(['facil', 'normal', 'dificil'] as Dificultad[])('dificultad %s', (dif) => {
     const niveles = [1, 2, 3, 4, 6, 9, 10, 12, 15, 19, 20, 24, 28, 33, 40, 47, 55, 64, 75, 90];
     let ganados = 0;
     for (const n of niveles) {
@@ -94,7 +94,7 @@ describe('niveles ganables (bot)', () => {
   }, 60000);
 
   test('los niveles del tutorial siempre se ganan', () => {
-    for (const dif of DIFICULTADES) {
+    for (const dif of ['facil', 'normal', 'dificil'] as Dificultad[]) {
       for (const n of [1, 2, 3]) {
         const ref = estadisticasReferencia(n);
         expect(simular(generarNivelValidado(paramsNivel(n, dif), ref), ref).estado).toBe('victoria');
