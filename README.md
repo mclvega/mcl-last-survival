@@ -10,7 +10,7 @@ Shooter de supervivencia vertical para el navegador, pensado primero para celula
 - **Cofres de arma** con su número de vida, y el **jefe** con su vida visible sobre la cabeza.
 - **Puertas:** `+N`, `×2`, `−N`, `÷2`, cadencia y daño. Las puertas de suma suben si les disparas.
 - **10 armas:** pistola, subfusil, escopeta, rifle, ametralladora, lanzallamas, lanzacohetes, láser, rayo tesla y cañón de plasma.
-- **10 tipos de zombi:** caminante, corredor, perro, gordo, blindado, explosivo, escupidor, divisor (se parte en tres), gigante y el jefe por fases. Van apareciendo a medida que se avanza.
+- **10 tipos de zombi:** caminante, corredor, perro, gordo, blindado, explosivo, escupidor, divisor (se parte en tres), gigante (desde el nivel 3, con mucha vida y su número visible) y el jefe por fases. Van apareciendo a medida que se avanza.
 - **Obstáculos:** pinchos y ruedas que ruedan.
 - **5 dificultades** (Fácil, Normal, Difícil, Experto y Pesadilla) con hordas grandes; cada nivel se valida con un bot y, si es imposible, se regenera más suave.
 - **Niveles infinitos:** se generan con una semilla, así el nivel N es igual para todos. Un bot comprueba que se pueden ganar y, si pierde, el nivel se regenera con menos zombis.

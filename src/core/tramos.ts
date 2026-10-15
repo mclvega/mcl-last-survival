@@ -177,6 +177,13 @@ function obstaculo(c: Contexto, y: number): void {
   }
 }
 
+/** Zombi gigante con mucha vida (varios segundos de fuego), en el centro del carril. */
+function gigante(c: Contexto, y: number): void {
+  if (!c.params.zombis.includes('gigante')) return;
+  const segundos = entre(c.rng, 1.8, 3) * (0.8 + Math.min(1, c.params.n / 60) * 0.6);
+  c.eventos.push({ tipo: 'zombi', z: 'gigante', x: ANCHO / 2 + (c.rng() - 0.5) * 40, y, vida: c.dps * segundos * c.params.fraccion });
+}
+
 function caja(c: Contexto, y: number): void {
   c.eventos.push({ tipo: 'caja', y, x: enCarril(c.rng), valor: Math.round(8 + c.params.n / 3) });
 }
@@ -214,6 +221,7 @@ export const PLANTILLAS: Record<TipoTramo, (c: Contexto) => void> = {
     grupo(c, c.y0 + 540, 160, c.presupuesto * 0.5, ['caminante', 'caminante', 'corredor', 'perro']);
   },
   puertas: (c) => {
+    gigante(c, c.y0 + 470);
     grupo(c, c.y0 + 40, 140, c.presupuesto * 0.35, ['caminante', 'corredor', 'perro']);
     puertas(c, c.y0 + 260);
     grupo(c, c.y0 + 380, 160, c.presupuesto * 0.35, ['caminante', 'caminante', 'corredor', 'explosivo', 'divisor']);
@@ -222,6 +230,7 @@ export const PLANTILLAS: Record<TipoTramo, (c: Contexto) => void> = {
     grupo(c, c.y0 + 560, 60, c.presupuesto * 0.3, ['caminante', 'blindado']);
   },
   barriles: (c) => {
+    gigante(c, c.y0 + 380);
     for (let i = 0; i < 3; i++) barril(c, c.y0 + 80 + i * 200);
     cofre(c, c.y0 + 600, ANCHO / 2, premioCofre(c));
     grupo(c, c.y0 + 200, 140, c.presupuesto * 0.5, ['caminante', 'corredor', 'perro']);
@@ -229,10 +238,12 @@ export const PLANTILLAS: Record<TipoTramo, (c: Contexto) => void> = {
     grupo(c, c.y0 + 500, 160, c.presupuesto * 0.5, ['caminante', 'caminante', 'gordo', 'blindado']);
   },
   horda: (c) => {
+    gigante(c, c.y0 + 600);
     for (let i = 0; i < 3; i++) grupo(c, c.y0 + 60 + i * 240, 180, c.presupuesto / 3, ['caminante', 'caminante', 'corredor', 'perro', 'explosivo', 'divisor']);
     barril(c, c.y0 + 700, 'soldados');
   },
   obstaculos: (c) => {
+    gigante(c, c.y0 + 400);
     obstaculo(c, c.y0 + 160);
     barril(c, c.y0 + 270);
     grupo(c, c.y0 + 300, 140, c.presupuesto * 0.5, ['caminante', 'corredor', 'perro']);
@@ -241,6 +252,8 @@ export const PLANTILLAS: Record<TipoTramo, (c: Contexto) => void> = {
     grupo(c, c.y0 + 600, 140, c.presupuesto * 0.5, ['caminante', 'explosivo', 'blindado']);
   },
   elite: (c) => {
+    gigante(c, c.y0 + 250);
+    gigante(c, c.y0 + 560);
     grupo(c, c.y0 + 120, 160, c.presupuesto * 0.5, ['gordo', 'escupidor', 'blindado', 'caminante', 'gigante']);
     grupo(c, c.y0 + 430, 160, c.presupuesto * 0.5, ['gordo', 'explosivo', 'escupidor', 'divisor', 'gigante']);
     cofre(c, c.y0 + 660, ANCHO / 2, premioCofre(c));

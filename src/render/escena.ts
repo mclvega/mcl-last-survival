@@ -376,14 +376,18 @@ export class Escena {
       ctx.lineWidth = 2;
       ctx.strokeRect(this.X - w / 2, this.Y - h / 2, w, h);
       this.textoContorno(formato(Math.max(0, z.vida)), this.X, this.Y, '#ffffff', 17 * this.K);
-    } else if ((z.tipo === 'gordo' || z.tipo === 'gigante' || z.tipo === 'blindado') && z.vida < z.vidaMax) {
-      if (!this.proy(x, y, z.r * 3.6)) return;
+    } else if (z.tipo === 'gigante' || ((z.tipo === 'gordo' || z.tipo === 'blindado') && z.vida < z.vidaMax)) {
+      // Zombis con mucha vida: número grande sobre la cabeza (como en los anuncios).
+      const grande = z.tipo === 'gigante';
+      if (!this.proy(x, y, z.r * 3.9 + (grande ? 14 : 6))) return;
       const ctx = this.ctx;
-      const w = 26 * this.K;
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.fillRect(this.X - w / 2, this.Y, w, 3 * this.K);
-      ctx.fillStyle = '#ff6b6b';
-      ctx.fillRect(this.X - w / 2, this.Y, (w * Math.max(0, z.vida)) / z.vidaMax, 3 * this.K);
+      const w = (grande ? 64 : 34) * this.K;
+      const h = (grande ? 14 : 9) * this.K;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(this.X - w / 2, this.Y - h / 2, w, h);
+      ctx.fillStyle = '#e03131';
+      ctx.fillRect(this.X - w / 2, this.Y - h / 2, (w * Math.max(0, z.vida)) / z.vidaMax, h);
+      this.textoContorno(formato(Math.max(0, z.vida)), this.X, this.Y, '#ffffff', (grande ? 13 : 8) * this.K);
     }
   }
 

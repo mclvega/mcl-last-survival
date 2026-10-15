@@ -24,7 +24,7 @@ export const ZOMBIS: Record<TipoZombi, InfoZombi> = {
   explosivo: { nombre: 'Explosivo', vida: 18, velocidad: 46, radio: 12, golpe: 2, monedas: 2, lateral: 50, desde: 12 },
   escupidor: { nombre: 'Escupidor', vida: 50, velocidad: 34, radio: 12, golpe: 1, monedas: 3, lateral: 26, desde: 16 },
   divisor: { nombre: 'Divisor', vida: 60, velocidad: 29, radio: 13, golpe: 2, monedas: 3, lateral: 30, desde: 20 },
-  gigante: { nombre: 'Gigante', vida: 480, velocidad: 17, radio: 26, golpe: 6, monedas: 12, lateral: 14, desde: 25 },
+  gigante: { nombre: 'Gigante', vida: 480, velocidad: 17, radio: 26, golpe: 6, monedas: 12, lateral: 14, desde: 3 },
   jefe: { nombre: 'Jefe', vida: 1000, velocidad: 38, radio: 40, golpe: 6, monedas: 40, lateral: 40, desde: 1 },
 };
 
