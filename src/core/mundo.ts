@@ -626,22 +626,21 @@ export class Mundo {
       this.cambiarSoldados(f.valor);
       this.evento({ t: 'premio', x: f.x, y: f.y, texto: '+' + f.valor, bueno: true });
     } else {
-      f.pasillo.mult = Math.max(f.pasillo.mult, f.valor);
+      // Se aplica al momento: el total queda en el mayor ×k roto (×2 y luego ×3 = ×3, no ×6).
+      const p = f.pasillo;
+      if (f.valor > p.mult) {
+        const antes = this.soldados;
+        this.cambiarSoldados(Math.min(MAX_SOLDADOS, Math.round((this.soldados * f.valor) / p.mult)) - this.soldados);
+        p.mult = f.valor;
+        this.evento({ t: 'puerta', x: this.x, y: this.y + 40, texto: '×' + f.valor + '  +' + (this.soldados - antes), buena: true });
+      }
       this.evento({ t: 'sube', x: f.x, y: f.y });
-      this.evento({ t: 'premio', x: f.x, y: f.y, texto: '×' + f.valor, bueno: true });
     }
   }
 
-  /** Al terminar la escalera se aplica el mayor multiplicador roto. */
+  /** Actualiza los destellos de las fichas y quita los pasillos que ya quedaron atrás. */
   private cerrarPasillos(): void {
     for (const p of this.pasillos) {
-      if (!p.aplicado && this.y > p.y1) {
-        p.aplicado = true;
-        if (p.mult > 1) {
-          this.cambiarSoldados(Math.min(MAX_SOLDADOS, this.soldados * p.mult) - this.soldados);
-          this.evento({ t: 'puerta', x: this.x, y: this.y + 40, texto: '×' + p.mult, buena: true });
-        }
-      }
       for (const f of p.fichas) if (f.flash > 0) f.flash -= PASO;
       if (p.y1 < this.y - 250) p.vivo = false;
     }

@@ -5,7 +5,7 @@ Shooter de supervivencia vertical para el navegador, pensado primero para celula
 - **Control de un dedo:** se arrastra desde cualquier parte de la pantalla y el movimiento es relativo, así el dedo no tapa al escuadrón. En computadora se juega con las flechas o A/D, y Espacio usa la habilidad.
 - **Barriles con número:** dan soldados, una mejor arma, cadencia, daño, escudo o monedas. Hay también barriles explosivos.
 - **Cámara en perspectiva** detrás del escuadrón (estilo de los anuncios de Last Z y Mob Control): camino gris con muros metálicos, soldados azules de espalda, zombis de frente y balas doradas.
-- **Pasillos laterales siempre presentes:** al lado del camino, separados por un muro bajo, aparece una columna de fichas **+1** (cada ficha rota suma un soldado) o una **escalera ×2…×9** (al terminarla se aplica el multiplicador más alto que rompiste).
+- **Pasillos laterales siempre presentes:** al lado del camino, separados por un muro bajo, aparece una columna de fichas **+1** (cada ficha rota suma un soldado) o una **escalera ×2…×9** (cada ficha morada que rompes multiplica tus soldados al instante; el total queda en el ×k más alto roto).
 - **Cofres de arma** con su número de vida, y el **jefe** con su vida visible sobre la cabeza.
 - **Puertas:** `+N`, `×2`, `−N`, `÷2`, cadencia y daño. Las puertas de suma suben si les disparas.
 - **10 armas:** pistola, subfusil, escopeta, rifle, ametralladora, lanzallamas, lanzacohetes, láser, rayo tesla y cañón de plasma.

@@ -198,7 +198,7 @@ export function pasillos(c: Contexto): void {
     // Solo 1 o 2 de cada 10 balas entran al pasillo: la vida se calcula con esa parte del fuego.
     for (let k = 2; k <= 9; k++) escalera.push({ dy: 60 + (k - 2) * 88, op: 'mult', valor: k, vida: c.dps * 0.05 * k ** 1.5 });
     c.eventos.push({ tipo: 'pasillo', y: c.y0, largo: LARGO_TRAMO - 10, lado: 1, fichas: escalera });
-    e.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, e.soldados * 1.7);
+    e.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, e.soldados * 2);
   } else {
     // Cerca del muro, para que el escuadrón los alcance con sus disparos.
     const x = ANCHO - ANCHO_PASILLO + 32;

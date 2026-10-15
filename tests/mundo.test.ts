@@ -59,7 +59,15 @@ describe('pasillo lateral', () => {
     expect(m.x).toBeGreaterThan(ANCHO - 90);
   });
 
-  test('la escalera aplica el mayor multiplicador roto al terminar', () => {
+  test('la escalera del lado derecho se rompe y multiplica al instante', () => {
+    const fichas = [{ dy: 200, op: 'mult' as const, valor: 2, vida: 15 }];
+    const m = new Mundo(nivelCon([{ tipo: 'pasillo', y: 0, largo: 400, lado: 1, fichas }]), stats);
+    avanzar(m, 2.2, ANCHO);
+    expect(m.pasillos[0].fichas[0].vivo).toBe(false);
+    expect(m.soldados).toBe(stats.soldados * 2);
+  });
+
+  test('la escalera deja el total en el mayor multiplicador roto', () => {
     const fichas = [2, 3].map((k, i) => ({ dy: 150 + i * 60, op: 'mult' as const, valor: k, vida: 5 }));
     const m = new Mundo(nivelCon([{ tipo: 'pasillo', y: 0, largo: 300, lado: 0, fichas }]), stats);
     avanzar(m, 6, 0);
