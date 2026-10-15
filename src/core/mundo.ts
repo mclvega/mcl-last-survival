@@ -180,6 +180,8 @@ export interface Entrada {
 /** Máximo de balas que salen a la vez de distintos soldados (las demás se agrupan). */
 const EMISORES = 10;
 const VEL_LATERAL = 900;
+/** Cuánto puede acercarse el centro del escuadrón más allá de la línea del muro. */
+export const PEGADO_MURO = 28;
 
 interface Explosion {
   x: number;
@@ -326,8 +328,9 @@ export class Mundo {
       if (this.y >= this.nivel.largo) this.llegarAlJefe();
     }
     // El muro del pasillo lateral limita el camino principal (las balas sí pasan).
-    const min = ANCHO_PASILLO;
-    const max = ANCHO - ANCHO_PASILLO;
+    // El escuadrón puede pegarse a cada muro para disparar a los pasillos.
+    const min = ANCHO_PASILLO - PEGADO_MURO;
+    const max = ANCHO - ANCHO_PASILLO + PEGADO_MURO;
     if (entrada.x !== null) {
       const objetivo = Math.min(max, Math.max(min, entrada.x));
       const d = objetivo - this.x;
@@ -898,6 +901,8 @@ export class Mundo {
     for (const b of this.barriles) {
       if (!b.vivo) continue;
       if (b.flash > 0) b.flash -= PASO;
+      // Los cofres de los pasillos están tras el muro: no se pueden chocar.
+      if (b.x < ANCHO_PASILLO || b.x > ANCHO - ANCHO_PASILLO) continue;
       const dx = b.x - this.x;
       const dy = b.y - this.y;
       const rr = b.r + r * 0.85;

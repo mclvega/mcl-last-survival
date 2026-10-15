@@ -199,7 +199,8 @@ export function pasillos(c: Contexto): void {
     c.eventos.push({ tipo: 'pasillo', y: c.y0, largo: LARGO_TRAMO - 10, lado: 1, fichas: escalera });
     e.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, e.soldados * 1.3);
   } else {
-    const x = ANCHO - ANCHO_PASILLO / 2;
+    // Cerca del muro, para que el escuadrón los alcance con sus disparos.
+    const x = ANCHO - ANCHO_PASILLO + 32;
     for (const dy of [150, 450]) cofre(c, c.y0 + dy, x, premioCofre(c));
   }
 }

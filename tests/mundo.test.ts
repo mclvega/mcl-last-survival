@@ -55,7 +55,8 @@ describe('pasillo lateral', () => {
   test('el muro no deja entrar al escuadrón en el pasillo', () => {
     const m = new Mundo(nivelCon([{ tipo: 'pasillo', y: 0, largo: 400, lado: 1, fichas: fichasSuma }]), stats);
     avanzar(m, 2, ANCHO);
-    expect(m.x).toBeLessThanOrEqual(ANCHO - 90);
+    expect(m.x).toBeLessThanOrEqual(ANCHO - 90 + 28);
+    expect(m.x).toBeGreaterThan(ANCHO - 90);
   });
 
   test('la escalera aplica el mayor multiplicador roto al terminar', () => {
