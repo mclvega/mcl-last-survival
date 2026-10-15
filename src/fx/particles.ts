@@ -125,12 +125,25 @@ export class SistemaParticulas {
    * Dibuja con la transformación sx = ox + x·esc, sy = oy + signoY·y·esc.
    * Con el mundo del juego signoY es −1 (la y crece hacia arriba).
    */
-  dibujar(ctx: CanvasRenderingContext2D, ox: number, oy: number, esc: number, signoY: number): void {
+  dibujar(
+    ctx: CanvasRenderingContext2D,
+    ox: number,
+    oy: number,
+    esc: number,
+    signoY: number,
+    proyectar?: (x: number, y: number, escala: number) => [number, number, number] | null,
+  ): void {
     for (const p of this.vivas) {
-      const sx = ox + p.x * esc;
-      const sy = oy + signoY * p.y * esc;
+      let sx = ox + p.x * esc;
+      let sy = oy + signoY * p.y * esc;
+      let s = p.tam * esc;
+      if (proyectar) {
+        const r = proyectar(p.x, p.y, 1);
+        if (!r) continue;
+        [sx, sy] = r;
+        s = p.tam * r[2];
+      }
       const k = p.vida / p.vidaMax;
-      const s = p.tam * esc;
       switch (p.tipo) {
         case 'chispa':
         case 'destello':

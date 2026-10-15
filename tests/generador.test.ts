@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { simular } from '../src/core/bot';
+import { generarNivelValidado, simular } from '../src/core/bot';
 import { ANCHO } from '../src/core/constantes';
 import { estadisticasReferencia, MODOS, paramsNivel, tipoNivel, type Dificultad } from '../src/core/dificultad';
 import { generarHorda, generarNivel, secuenciaTramos } from '../src/core/generador';
@@ -72,23 +72,32 @@ describe('generador de niveles', () => {
 });
 
 describe('niveles ganables (bot)', () => {
-  // Muestra de niveles en las tres dificultades: el bot debe ganar la gran mayoría
-  // (los que pierda, el juego los regenera con menos zombis).
+  // El juego valida cada nivel con el bot y, si lo pierde, lo regenera con menos
+  // zombis. Los niveles que se juegan deben poder ganarse casi siempre.
   test.each(DIFICULTADES)('dificultad %s', (dif) => {
     const niveles = [1, 2, 3, 4, 6, 9, 10, 12, 15, 19, 20, 24, 28, 33, 40, 47, 55, 64, 75, 90];
     let ganados = 0;
     for (const n of niveles) {
       const ref = estadisticasReferencia(n);
-      if (simular(generarNivel(paramsNivel(n, dif), ref), ref).estado === 'victoria') ganados++;
+      if (simular(generarNivelValidado(paramsNivel(n, dif), ref), ref).estado === 'victoria') ganados++;
     }
-    expect(ganados / niveles.length).toBeGreaterThanOrEqual(dif === 'dificil' ? 0.8 : 0.9);
+    expect(ganados / niveles.length).toBeGreaterThanOrEqual(0.9);
+  }, 120000);
+
+  test('la dificultad es real: sin validar, el bot pierde algunos niveles en Difícil', () => {
+    let perdidos = 0;
+    for (const n of [20, 30, 40, 50, 60, 70, 80, 90]) {
+      const ref = estadisticasReferencia(n);
+      if (simular(generarNivel(paramsNivel(n, 'dificil'), ref), ref).estado !== 'victoria') perdidos++;
+    }
+    expect(perdidos).toBeGreaterThan(0);
   }, 60000);
 
   test('los niveles del tutorial siempre se ganan', () => {
     for (const dif of DIFICULTADES) {
       for (const n of [1, 2, 3]) {
         const ref = estadisticasReferencia(n);
-        expect(simular(generarNivel(paramsNivel(n, dif), ref), ref).estado).toBe('victoria');
+        expect(simular(generarNivelValidado(paramsNivel(n, dif), ref), ref).estado).toBe('victoria');
       }
     }
   });

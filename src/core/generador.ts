@@ -4,7 +4,7 @@ import type { DefPuerta, Premio } from './elementos';
 import type { TipoZombi } from './enemigos';
 import type { Estadisticas } from './escuadra';
 import { pick, rngFrom, shuffle, type Rng } from './rng';
-import { FACTOR_TRAMO, PLANTILLAS, type EstadoEsperado, type TipoTramo } from './tramos';
+import { FACTOR_TRAMO, PLANTILLAS, pasillos, type EstadoEsperado, type TipoTramo } from './tramos';
 
 /** Algo que aparece en el camino a cierta altura `y`. */
 export type Evento =
@@ -32,11 +32,11 @@ export interface Nivel {
 export function secuenciaTramos(p: ParamsNivel, rng: Rng): TipoTramo[] {
   if (p.n === 1) return ['calentamiento', 'barriles'];
   if (p.n === 2) return ['calentamiento', 'puertas', 'barriles'];
-  if (p.n === 3) return ['calentamiento', 'pasillo', 'horda'];
-  const opciones: TipoTramo[] = ['puertas', 'barriles', 'horda', 'pasillo'];
+  if (p.n === 3) return ['calentamiento', 'puertas', 'horda'];
+  const opciones: TipoTramo[] = ['puertas', 'barriles', 'horda', 'horda'];
   if (p.obstaculos.length) opciones.push('obstaculos');
   if (p.zombis.includes('gordo')) opciones.push('elite');
-  const medios: TipoTramo[] = p.numTramos >= 4 ? ['puertas', 'barriles', 'pasillo'] : ['pasillo', 'barriles'];
+  const medios: TipoTramo[] = ['puertas', 'barriles'];
   while (medios.length < p.numTramos - 1) medios.push(pick(rng, opciones));
   shuffle(rng, medios);
   const secuencia: TipoTramo[] = ['calentamiento', ...medios];
@@ -52,19 +52,23 @@ interface Base {
   escala: number;
 }
 
-function generarTramo(b: Base, tipo: TipoTramo, y0: number, fraccion: number, eventos: Evento[]): void {
+function generarTramo(b: Base, tipo: TipoTramo, y0: number, indice: number, fraccion: number, eventos: Evento[]): void {
   const dps = dpsEscuadra(b.estado);
   const tiempo = LARGO_TRAMO / (VEL_AVANCE + 45);
-  PLANTILLAS[tipo]({
+  const contexto = {
     rng: b.rng,
     y0,
+    indice,
     presupuesto: dps * tiempo * fraccion * FACTOR_TRAMO[tipo],
     vidaEscala: b.escala * Math.sqrt(dps / b.dps0),
     dps,
     params: b.params,
     estado: b.estado,
     eventos,
-  });
+  };
+  // Los pasillos laterales (+1, escalera ×k o cofres) acompañan todo el camino.
+  pasillos(contexto);
+  PLANTILLAS[tipo](contexto);
 }
 
 function base(semilla: string, params: ParamsNivel, ref: Estadisticas): Base {
@@ -81,11 +85,11 @@ function base(semilla: string, params: ParamsNivel, ref: Estadisticas): Base {
 export function generarNivel(p: ParamsNivel, ref: Estadisticas, intento = 0): Nivel {
   const semilla = `nivel:${p.n}:${p.dificultad}:${p.masFacil ? 1 : 0}:${intento}`;
   const b = base(semilla, p, ref);
-  const fraccion = p.fraccion * 0.88 ** intento;
+  const fraccion = p.fraccion * 0.85 ** intento;
   const eventos: Evento[] = [];
   let y = INICIO;
-  for (const tipo of secuenciaTramos(p, b.rng)) {
-    generarTramo(b, tipo, y, fraccion, eventos);
+  for (const [i, tipo] of secuenciaTramos(p, b.rng).entries()) {
+    generarTramo(b, tipo, y, i, fraccion, eventos);
     y += LARGO_TRAMO;
   }
   eventos.sort((a, c) => a.y - c.y);
@@ -94,24 +98,25 @@ export function generarNivel(p: ParamsNivel, ref: Estadisticas, intento = 0): Ni
     semilla,
     largo: y,
     eventos,
-    vidaJefe: dpsEscuadra(b.estado) * p.tiempoJefe * Math.min(1, fraccion + 0.15),
+    // El jefe se calcula con un poder esperado acotado, para que la pelea dure segundos y no minutos.
+    vidaJefe: Math.min(dpsEscuadra(b.estado), b.dps0 * 5) * p.tiempoJefe * Math.min(1, fraccion + 0.15),
     escala: b.escala,
   };
 }
 
 /** Modo Horda: camino sin fin con dificultad creciente. */
 export function generarHorda(dificultad: Dificultad, ref: Estadisticas, semilla = 'horda'): Nivel {
-  const p: ParamsNivel = { ...paramsNivel(40, dificultad), zombis: ['caminante', 'corredor', 'gordo', 'explosivo', 'escupidor'], obstaculos: ['pinchos', 'rueda'] };
+  const p: ParamsNivel = { ...paramsNivel(40, dificultad), zombis: ['caminante', 'corredor', 'perro', 'gordo', 'blindado', 'explosivo', 'escupidor', 'divisor', 'gigante'], obstaculos: ['pinchos', 'rueda'] };
   const b = base(`horda:${semilla}:${dificultad}`, p, ref);
   const nivel: Nivel = { n: 0, semilla, largo: Infinity, eventos: [], vidaJefe: 0, escala: b.escala };
-  const tipos: TipoTramo[] = ['puertas', 'barriles', 'horda', 'horda', 'obstaculos', 'elite', 'pasillo'];
+  const tipos: TipoTramo[] = ['puertas', 'barriles', 'horda', 'horda', 'obstaculos', 'elite'];
   let y = INICIO;
   let i = 0;
   nivel.extender = (hasta) => {
     while (y < hasta) {
       const tipo: TipoTramo = i === 0 ? 'calentamiento' : i % 6 === 0 ? 'descanso' : pick(b.rng, tipos);
       const nuevos: Evento[] = [];
-      generarTramo(b, tipo, y, MODOS[dificultad].fraccion[0] + 0.06 * i, nuevos);
+      generarTramo(b, tipo, y, i, MODOS[dificultad].fraccion[0] + 0.07 * i, nuevos);
       nuevos.sort((a, c) => a.y - c.y);
       nivel.eventos.push(...nuevos);
       y += LARGO_TRAMO;

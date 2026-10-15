@@ -1,13 +1,13 @@
-import { ANCHO, ANCHO_PASILLO, MAX_SOLDADOS } from './constantes';
+import { NIVEL_ARMA_MAX } from './armas';
+import { ANCHO, ANCHO_PASILLO, LARGO_TRAMO, MAX_SOLDADOS } from './constantes';
 import type { ParamsNivel } from './dificultad';
 import { soldadosTrasPuerta, valorEquivalente, type DefPuerta, type Premio } from './elementos';
 import { ZOMBIS, type TipoZombi } from './enemigos';
 import type { Evento } from './generador';
-import { NIVEL_ARMA_MAX } from './armas';
 import type { Rng } from './rng';
 
 /** Plantillas de tramos (unos 10 segundos cada uno) con las que se arma un nivel. */
-export type TipoTramo = 'calentamiento' | 'puertas' | 'barriles' | 'horda' | 'obstaculos' | 'elite' | 'descanso' | 'pasillo';
+export type TipoTramo = 'calentamiento' | 'puertas' | 'barriles' | 'horda' | 'obstaculos' | 'elite' | 'descanso';
 
 /** Lo que se espera que tenga el escuadrón en este punto del nivel. */
 export interface EstadoEsperado {
@@ -20,6 +20,8 @@ export interface EstadoEsperado {
 export interface Contexto {
   rng: Rng;
   y0: number;
+  /** Índice del tramo dentro del nivel. */
+  indice: number;
   /** Vida enemiga total que se puede repartir en el tramo. */
   presupuesto: number;
   vidaEscala: number;
@@ -27,46 +29,46 @@ export interface Contexto {
   params: ParamsNivel;
   estado: EstadoEsperado;
   eventos: Evento[];
-  /** Zona donde pueden aparecer los zombis (se achica cuando hay pasillo lateral). */
-  xMin?: number;
-  xMax?: number;
 }
 
 /** Parte del poder del escuadrón que se convierte en zombis según el tipo de tramo. */
 export const FACTOR_TRAMO: Record<TipoTramo, number> = {
   calentamiento: 0.6,
-  puertas: 0.75,
-  barriles: 0.65,
-  horda: 1.2,
-  obstaculos: 0.55,
-  elite: 1,
-  descanso: 0.3,
-  pasillo: 0.6,
+  puertas: 0.8,
+  barriles: 0.7,
+  horda: 1.25,
+  obstaculos: 0.6,
+  elite: 1.05,
+  descanso: 0.35,
 };
 
+/** Carril central (entre los dos pasillos laterales). */
+export const CARRIL_MIN = ANCHO_PASILLO + 12;
+export const CARRIL_MAX = ANCHO - ANCHO_PASILLO - 12;
+
 const SOLDADOS_ESPERADOS_MAX = MAX_SOLDADOS;
-/** Probabilidad de romper un barril (para estimar el poder esperado). */
+/** Probabilidad de romper un cofre o barril (para estimar el poder esperado). */
 const PROB_BARRIL = 0.75;
+/** Máximo de zombis por grupo: si hicieran falta más, cada uno es más fuerte. */
+const MAX_GRUPO = 110;
+/** Los zombis son débiles pero muchos (hordas como en los anuncios). */
+const VIDA_HORDA = 0.5;
 
 const entre = (rng: Rng, a: number, b: number) => a + rng() * (b - a);
 const limitar = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+const enCarril = (rng: Rng) => entre(rng, CARRIL_MIN + 10, CARRIL_MAX - 10);
 
 function disponibles(c: Contexto, deseados: TipoZombi[]): TipoZombi[] {
   const lista = deseados.filter((t) => c.params.zombis.includes(t));
   return lista.length ? lista : ['caminante'];
 }
 
-/** Grupo de zombis con una vida total cercana al presupuesto. */
+/** Grupo de zombis en el carril central con una vida total cercana al presupuesto. */
 function grupo(c: Contexto, y: number, alto: number, presupuesto: number, deseados: TipoZombi[]): void {
   const tipos = disponibles(c, deseados);
-  const vidas = tipos.map((t) => ZOMBIS[t].vida * c.vidaEscala);
+  const vidas = tipos.map((t) => ZOMBIS[t].vida * c.vidaEscala * VIDA_HORDA);
   const promedio = vidas.reduce((a, b) => a + b, 0) / vidas.length;
-  // Tope de cantidad: si harían falta demasiados, cada uno es más fuerte.
-  const mult = Math.max(1, presupuesto / promedio / 60);
-  const xMin = c.xMin ?? 16;
-  const xMax = c.xMax ?? ANCHO - 16;
-  const centro = entre(c.rng, xMin + 64, xMax - 64);
-  const ancho = entre(c.rng, 90, 220);
+  const mult = Math.max(1, presupuesto / promedio / MAX_GRUPO);
   let gastado = 0;
   let cuenta = 0;
   while (gastado < presupuesto) {
@@ -76,7 +78,7 @@ function grupo(c: Contexto, y: number, alto: number, presupuesto: number, desead
     c.eventos.push({
       tipo: 'zombi',
       z: tipos[i],
-      x: limitar(centro + (c.rng() - 0.5) * ancho, xMin, xMax),
+      x: limitar(ANCHO / 2 + (c.rng() - 0.5) * (CARRIL_MAX - CARRIL_MIN), CARRIL_MIN, CARRIL_MAX),
       y: y + c.rng() * alto,
       vida,
     });
@@ -85,59 +87,55 @@ function grupo(c: Contexto, y: number, alto: number, presupuesto: number, desead
   }
 }
 
-function elegirPremio(c: Contexto): Premio {
-  const opciones: Array<[Premio, number]> = [
-    ['soldados', 5],
-    ['arma', c.estado.arma < NIVEL_ARMA_MAX && c.params.n >= 2 ? 1.6 : 0],
-    ['cadencia', 1],
-    ['dano', 1],
-    ['escudo', c.params.n >= 3 ? 0.6 : 0],
-    ['monedas', 0.8],
-  ];
-  const total = opciones.reduce((a, [, p]) => a + p, 0);
-  let r = c.rng() * total;
-  for (const [premio, peso] of opciones) {
-    r -= peso;
-    if (r <= 0) return premio;
-  }
-  return 'soldados';
+function aplicarPremioEsperado(c: Contexto, premio: Premio, valor: number): void {
+  const e = c.estado;
+  if (premio === 'soldados') e.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, e.soldados + valor * PROB_BARRIL);
+  else if (premio === 'arma') e.arma = Math.min(NIVEL_ARMA_MAX, e.arma + 1);
+  else if (premio === 'cadencia') e.cadencia *= 1 + (valor / 100) * PROB_BARRIL;
+  else if (premio === 'dano') e.dano *= 1 + (valor / 100) * PROB_BARRIL;
 }
 
-function barril(c: Contexto, y: number, x = entre(c.rng, 40, ANCHO - 40), forzado?: Premio): void {
-  const premio = forzado ?? elegirPremio(c);
-  const e = c.estado;
-  let valor = 0;
-  let segundos = entre(c.rng, 0.45, 0.9);
+function valorPremio(c: Contexto, premio: Premio): number {
   switch (premio) {
     case 'soldados':
-      valor = Math.max(2, Math.round((2 + e.soldados * 0.15) * entre(c.rng, 0.8, 1.25)));
-      e.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, e.soldados + valor * PROB_BARRIL);
-      break;
+      return Math.max(2, Math.round((2 + c.estado.soldados * 0.15) * entre(c.rng, 0.8, 1.25)));
     case 'arma':
-      valor = 1;
-      segundos = entre(c.rng, 1, 1.4);
-      e.arma = Math.min(NIVEL_ARMA_MAX, e.arma + 1);
-      break;
+      return 1;
     case 'cadencia':
-      valor = 15;
-      e.cadencia *= 1 + (valor / 100) * PROB_BARRIL;
-      break;
+      return 15;
     case 'dano':
-      valor = 20;
-      e.dano *= 1 + (valor / 100) * PROB_BARRIL;
-      break;
+      return 20;
     case 'escudo':
-      valor = 2 + Math.floor(c.rng() * 2);
-      break;
+      return 2 + Math.floor(c.rng() * 2);
     case 'monedas':
-      valor = Math.round(10 + c.params.n / 2);
-      break;
+      return Math.round(10 + c.params.n / 2);
   }
-  c.eventos.push({ tipo: 'barril', x, y, premio, valor, vida: c.dps * segundos, explosivo: false });
 }
 
-function barrilExplosivo(c: Contexto, y: number, x: number): void {
-  c.eventos.push({ tipo: 'barril', x, y, premio: 'monedas', valor: 0, vida: c.dps * 0.12, explosivo: true });
+/** Barril en el carril (soldados, escudo o monedas). */
+function barril(c: Contexto, y: number, forzado?: Premio): void {
+  const opciones: Premio[] = ['soldados', 'soldados', 'soldados', 'monedas', ...(c.params.n >= 3 ? (['escudo'] as Premio[]) : [])];
+  const premio = forzado ?? opciones[Math.floor(c.rng() * opciones.length)];
+  const valor = valorPremio(c, premio);
+  c.eventos.push({ tipo: 'barril', x: enCarril(c.rng), y, premio, valor, vida: c.dps * entre(c.rng, 0.45, 0.9), explosivo: false });
+  aplicarPremioEsperado(c, premio, valor);
+}
+
+/** Cofre de mejora (arma, daño o cadencia). Puede ir en el carril o en el pasillo derecho. */
+function cofre(c: Contexto, y: number, x: number, premio: Premio): void {
+  const valor = valorPremio(c, premio);
+  c.eventos.push({ tipo: 'barril', x, y, premio, valor, vida: c.dps * entre(c.rng, 1.1, 1.6), explosivo: false });
+  aplicarPremioEsperado(c, premio, valor);
+}
+
+function premioCofre(c: Contexto): Premio {
+  const r = c.rng();
+  if (c.estado.arma < NIVEL_ARMA_MAX && c.params.n >= 2 && r < 0.45) return 'arma';
+  return r < 0.72 ? 'dano' : 'cadencia';
+}
+
+function barrilExplosivo(c: Contexto, y: number): void {
+  c.eventos.push({ tipo: 'barril', x: enCarril(c.rng), y, premio: 'monedas', valor: 0, vida: c.dps * 0.12, explosivo: true });
 }
 
 function puertas(c: Contexto, y: number): void {
@@ -145,15 +143,15 @@ function puertas(c: Contexto, y: number): void {
   const buena = (): DefPuerta => {
     const r = c.rng();
     if (r < 0.45) return { op: 'suma', valor: Math.max(3, Math.round(s * 0.3 + 2)) };
-    if (r < 0.65 && s <= 12) return { op: 'mult', valor: 2 };
+    if (r < 0.62 && s <= 12) return { op: 'mult', valor: 2 };
     if (r < 0.82) return { op: 'cadencia', valor: 20 };
     return { op: 'dano', valor: 25 };
   };
   const mala = (): DefPuerta =>
-    s >= 10 && c.rng() < 0.35 ? { op: 'div', valor: 2 } : { op: 'suma', valor: -Math.max(2, Math.round(s * 0.35 + 1)) };
+    s >= 10 && c.rng() < 0.4 ? { op: 'div', valor: 2 } : { op: 'suma', valor: -Math.max(3, Math.round(s * 0.4 + 1)) };
   const a = buena();
   let b: DefPuerta;
-  if (c.params.puertasNegativas && c.rng() < 0.7) b = mala();
+  if (c.params.puertasNegativas && c.rng() < 0.75) b = mala();
   else {
     b = buena();
     for (let i = 0; i < 5 && b.op === a.op; i++) b = buena();
@@ -161,7 +159,6 @@ function puertas(c: Contexto, y: number): void {
   }
   const [izq, der] = c.rng() < 0.5 ? [a, b] : [b, a];
   c.eventos.push({ tipo: 'puertas', y, a: izq, b: der });
-  // Se espera que el jugador elija la mejor.
   const mejor = valorEquivalente(s, izq) >= valorEquivalente(s, der) ? izq : der;
   if (mejor.op === 'cadencia') c.estado.cadencia *= 1 + mejor.valor / 100;
   else if (mejor.op === 'dano') c.estado.dano *= 1 + mejor.valor / 100;
@@ -173,88 +170,84 @@ function obstaculo(c: Contexto, y: number): void {
   if (!tipos.length) return;
   const tipo = tipos[Math.floor(c.rng() * tipos.length)];
   if (tipo === 'pinchos') {
-    const ancho = entre(c.rng, 80, 170);
-    c.eventos.push({ tipo: 'pinchos', y, x: entre(c.rng, ancho / 2 + 10, ANCHO - ancho / 2 - 10), ancho });
+    const ancho = entre(c.rng, 60, 110);
+    c.eventos.push({ tipo: 'pinchos', y, x: entre(c.rng, CARRIL_MIN + ancho / 2 - 12, CARRIL_MAX - ancho / 2 + 12), ancho });
   } else {
-    c.eventos.push({ tipo: 'rueda', y, x: entre(c.rng, 40, ANCHO - 40), vel: (c.rng() < 0.5 ? -1 : 1) * entre(c.rng, 70, 130) });
+    c.eventos.push({ tipo: 'rueda', y, x: enCarril(c.rng), vel: (c.rng() < 0.5 ? -1 : 1) * entre(c.rng, 70, 120) });
   }
 }
 
-function caja(c: Contexto, y: number, x = entre(c.rng, 40, ANCHO - 40)): void {
-  c.eventos.push({ tipo: 'caja', y, x, valor: Math.round(8 + c.params.n / 3) });
+function caja(c: Contexto, y: number): void {
+  c.eventos.push({ tipo: 'caja', y, x: enCarril(c.rng), valor: Math.round(8 + c.params.n / 3) });
 }
 
 /**
- * Pasillo lateral: una columna de fichas «+1» (cada una suma un soldado) o una
- * escalera «×2 … ×9» (se aplica el multiplicador más alto que se rompa).
+ * Pasillos laterales (siempre presentes): a la izquierda una columna de fichas
+ * «+1» y a la derecha, según el tramo, una escalera «×2…×9» o cofres de mejora.
  */
-function pasillo(c: Contexto): void {
-  const lado: 0 | 1 = c.rng() < 0.5 ? 0 : 1;
+export function pasillos(c: Contexto): void {
+  const e = c.estado;
   const fichas: Array<{ dy: number; op: 'suma' | 'mult'; valor: number; vida: number }> = [];
-  const escalera = c.params.n >= 6 && c.rng() < 0.45;
-  if (escalera) {
-    for (let k = 2; k <= 9; k++) fichas.push({ dy: 120 + (k - 2) * 62, op: 'mult', valor: k, vida: c.dps * 0.25 * k ** 1.6 });
-    c.estado.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, c.estado.soldados * 2);
+  const cantidad = Math.floor((LARGO_TRAMO - 60) / 36);
+  for (let i = 0; i < cantidad; i++) fichas.push({ dy: 40 + i * 36, op: 'suma', valor: 1, vida: c.dps * 0.06 * (1 + i / cantidad) });
+  c.eventos.push({ tipo: 'pasillo', y: c.y0, largo: LARGO_TRAMO - 10, lado: 0, fichas });
+  e.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, e.soldados + cantidad * 0.25);
+
+  if (c.params.n >= 4 && c.indice % 2 === 1) {
+    const escalera: typeof fichas = [];
+    for (let k = 2; k <= 9; k++) escalera.push({ dy: 60 + (k - 2) * 88, op: 'mult', valor: k, vida: c.dps * 0.28 * k ** 1.7 });
+    c.eventos.push({ tipo: 'pasillo', y: c.y0, largo: LARGO_TRAMO - 10, lado: 1, fichas: escalera });
+    e.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, e.soldados * 1.3);
   } else {
-    const cantidad = 14 + Math.floor(c.rng() * 5);
-    for (let i = 0; i < cantidad; i++) fichas.push({ dy: 60 + i * 34, op: 'suma', valor: 1, vida: c.dps * 0.1 });
-    c.estado.soldados = Math.min(SOLDADOS_ESPERADOS_MAX, c.estado.soldados + cantidad * 0.6);
+    const x = ANCHO - ANCHO_PASILLO / 2;
+    for (const dy of [150, 450]) cofre(c, c.y0 + dy, x, premioCofre(c));
   }
-  const largo = fichas[fichas.length - 1].dy + 60;
-  c.eventos.push({ tipo: 'pasillo', y: c.y0, largo, lado, fichas });
-  const zona = { ...c, xMin: lado === 0 ? ANCHO_PASILLO + 14 : 16, xMax: lado === 0 ? ANCHO - 16 : ANCHO - ANCHO_PASILLO - 14 };
-  grupo(zona, c.y0 + 150, 200, c.presupuesto * 0.5, ['caminante', 'caminante', 'corredor']);
-  grupo(zona, c.y0 + 460, 220, c.presupuesto * 0.5, ['caminante', 'gordo', 'explosivo']);
 }
 
 export const PLANTILLAS: Record<TipoTramo, (c: Contexto) => void> = {
-  pasillo,
   calentamiento: (c) => {
-    barril(c, c.y0 + 120, undefined, 'soldados');
+    barril(c, c.y0 + 120, 'soldados');
     grupo(c, c.y0 + 250, 140, c.presupuesto * 0.5, ['caminante']);
-    barril(c, c.y0 + 430, undefined, c.params.n === 1 ? 'soldados' : undefined);
-    grupo(c, c.y0 + 540, 160, c.presupuesto * 0.5, ['caminante', 'caminante', 'corredor']);
+    barril(c, c.y0 + 430, c.params.n === 1 ? 'soldados' : undefined);
+    grupo(c, c.y0 + 540, 160, c.presupuesto * 0.5, ['caminante', 'caminante', 'corredor', 'perro']);
   },
   puertas: (c) => {
-    grupo(c, c.y0 + 40, 140, c.presupuesto * 0.35, ['caminante', 'corredor']);
+    grupo(c, c.y0 + 40, 140, c.presupuesto * 0.35, ['caminante', 'corredor', 'perro']);
     puertas(c, c.y0 + 260);
-    grupo(c, c.y0 + 380, 160, c.presupuesto * 0.35, ['caminante', 'caminante', 'corredor', 'explosivo']);
+    grupo(c, c.y0 + 380, 160, c.presupuesto * 0.35, ['caminante', 'caminante', 'corredor', 'explosivo', 'divisor']);
     if (c.rng() < 0.5) puertas(c, c.y0 + 640);
     else barril(c, c.y0 + 640);
-    grupo(c, c.y0 + 560, 60, c.presupuesto * 0.3, ['caminante']);
+    grupo(c, c.y0 + 560, 60, c.presupuesto * 0.3, ['caminante', 'blindado']);
   },
   barriles: (c) => {
-    const cantidad = 4 + Math.floor(c.rng() * 2);
-    for (let i = 0; i < cantidad; i++) {
-      const lado = i % 2 === 0 ? entre(c.rng, 50, 160) : entre(c.rng, 200, ANCHO - 50);
-      barril(c, c.y0 + 80 + i * 130, lado);
-    }
-    grupo(c, c.y0 + 200, 140, c.presupuesto * 0.5, ['caminante', 'corredor']);
-    if (c.params.n >= 6) barrilExplosivo(c, c.y0 + 470, entre(c.rng, 60, ANCHO - 60));
-    grupo(c, c.y0 + 500, 160, c.presupuesto * 0.5, ['caminante', 'caminante', 'gordo']);
+    for (let i = 0; i < 3; i++) barril(c, c.y0 + 80 + i * 200);
+    cofre(c, c.y0 + 600, ANCHO / 2, premioCofre(c));
+    grupo(c, c.y0 + 200, 140, c.presupuesto * 0.5, ['caminante', 'corredor', 'perro']);
+    if (c.params.n >= 6) barrilExplosivo(c, c.y0 + 470);
+    grupo(c, c.y0 + 500, 160, c.presupuesto * 0.5, ['caminante', 'caminante', 'gordo', 'blindado']);
   },
   horda: (c) => {
-    for (let i = 0; i < 3; i++) grupo(c, c.y0 + 60 + i * 240, 180, c.presupuesto / 3, ['caminante', 'caminante', 'corredor', 'explosivo']);
-    barril(c, c.y0 + 700, undefined, 'soldados');
+    for (let i = 0; i < 3; i++) grupo(c, c.y0 + 60 + i * 240, 180, c.presupuesto / 3, ['caminante', 'caminante', 'corredor', 'perro', 'explosivo', 'divisor']);
+    barril(c, c.y0 + 700, 'soldados');
   },
   obstaculos: (c) => {
     obstaculo(c, c.y0 + 160);
     barril(c, c.y0 + 270);
-    grupo(c, c.y0 + 300, 140, c.presupuesto * 0.5, ['caminante', 'corredor']);
+    grupo(c, c.y0 + 300, 140, c.presupuesto * 0.5, ['caminante', 'corredor', 'perro']);
     obstaculo(c, c.y0 + 470);
     caja(c, c.y0 + 540);
-    grupo(c, c.y0 + 600, 140, c.presupuesto * 0.5, ['caminante', 'explosivo']);
+    grupo(c, c.y0 + 600, 140, c.presupuesto * 0.5, ['caminante', 'explosivo', 'blindado']);
   },
   elite: (c) => {
-    grupo(c, c.y0 + 120, 160, c.presupuesto * 0.5, ['gordo', 'escupidor', 'caminante', 'caminante']);
-    grupo(c, c.y0 + 430, 160, c.presupuesto * 0.5, ['gordo', 'explosivo', 'escupidor', 'corredor']);
-    barril(c, c.y0 + 660, undefined, c.rng() < 0.5 ? 'dano' : 'arma');
+    grupo(c, c.y0 + 120, 160, c.presupuesto * 0.5, ['gordo', 'escupidor', 'blindado', 'caminante', 'gigante']);
+    grupo(c, c.y0 + 430, 160, c.presupuesto * 0.5, ['gordo', 'explosivo', 'escupidor', 'divisor', 'gigante']);
+    cofre(c, c.y0 + 660, ANCHO / 2, premioCofre(c));
   },
   descanso: (c) => {
-    caja(c, c.y0 + 100, 90);
-    caja(c, c.y0 + 100, ANCHO - 90);
-    barril(c, c.y0 + 260, undefined, 'soldados');
-    grupo(c, c.y0 + 380, 200, c.presupuesto, ['caminante']);
+    caja(c, c.y0 + 100);
+    caja(c, c.y0 + 160);
+    barril(c, c.y0 + 260, 'soldados');
+    grupo(c, c.y0 + 380, 200, c.presupuesto, ['caminante', 'perro']);
     caja(c, c.y0 + 640);
   },
 };

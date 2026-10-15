@@ -83,6 +83,8 @@ a { color: var(--primary); }
 }
 h1:focus { outline: none; }
 
+[hidden] { display: none !important; }
+
 .oculto-visual {
   position: absolute !important;
   width: 1px;

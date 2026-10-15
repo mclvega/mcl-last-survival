@@ -4,12 +4,14 @@ Shooter de supervivencia vertical para el navegador, pensado primero para celula
 
 - **Control de un dedo:** se arrastra desde cualquier parte de la pantalla y el movimiento es relativo, así el dedo no tapa al escuadrón. En computadora se juega con las flechas o A/D, y Espacio usa la habilidad.
 - **Barriles con número:** dan soldados, una mejor arma, cadencia, daño, escudo o monedas. Hay también barriles explosivos.
-- **Pasillos laterales:** al lado del camino, separados por un muro bajo, aparece una columna de fichas **+1** (cada ficha rota suma un soldado) o una **escalera ×2…×9** (al terminarla se aplica el multiplicador más alto que rompiste).
+- **Cámara en perspectiva** detrás del escuadrón (estilo de los anuncios de Last Z y Mob Control): camino gris con muros metálicos, soldados azules de espalda, zombis de frente y balas doradas.
+- **Pasillos laterales siempre presentes:** al lado del camino, separados por un muro bajo, aparece una columna de fichas **+1** (cada ficha rota suma un soldado) o una **escalera ×2…×9** (al terminarla se aplica el multiplicador más alto que rompiste).
 - **Cofres de arma** con su número de vida, y el **jefe** con su vida visible sobre la cabeza.
 - **Puertas:** `+N`, `×2`, `−N`, `÷2`, cadencia y daño. Las puertas de suma suben si les disparas.
-- **6 armas:** pistola, subfusil, escopeta, rifle, lanzallamas y lanzacohetes.
-- **6 tipos de zombi:** caminante, corredor, gordo, escupidor, explosivo y el jefe con ataques por fases.
+- **10 armas:** pistola, subfusil, escopeta, rifle, ametralladora, lanzallamas, lanzacohetes, láser, rayo tesla y cañón de plasma.
+- **10 tipos de zombi:** caminante, corredor, perro, gordo, blindado, explosivo, escupidor, divisor (se parte en tres), gigante y el jefe por fases. Van apareciendo a medida que se avanza.
 - **Obstáculos:** pinchos y ruedas que ruedan.
+- **Dificultad alta:** hordas grandes; cada nivel se valida con un bot y, si es imposible, se regenera más suave.
 - **Niveles infinitos:** se generan con una semilla, así el nivel N es igual para todos. Un bot comprueba que se pueden ganar y, si pierde, el nivel se regenera con menos zombis.
 - **Capítulos de 10 niveles:** 8 escenarios distintos y un jefe especial cada 10 niveles, que da premio doble. Desde el nivel 11 se desbloquea el **Modo Horda**, un camino sin fin para batir tu récord.
 - **Refugio:** 5 edificios con mejoras permanentes. **Héroes** con una habilidad y un efecto pasivo, sin gacha. **Aspectos** para el escuadrón, **misiones** y **recompensa diaria**.

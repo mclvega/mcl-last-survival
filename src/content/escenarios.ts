@@ -10,17 +10,20 @@ export interface Escenario {
   linea: string;
   detalle: string;
   fuera: string;
+  cielo: string;
+  /** Piso de los pasillos laterales. */
+  pasillo: string;
 }
 
 export const ESCENARIOS: readonly Escenario[] = [
-  { nombre: 'Ciudad', icono: '🏙️', suelo: '#3b3f46', borde: '#6b6f78', linea: '#e9ecef', detalle: '#2b2e33', fuera: '#1c1e22' },
-  { nombre: 'Autopista', icono: '🛣️', suelo: '#45403a', borde: '#7a6f5d', linea: '#ffd43b', detalle: '#2f2b27', fuera: '#22201c' },
-  { nombre: 'Bosque', icono: '🌲', suelo: '#4d4234', borde: '#2f5d34', linea: '#c9b98f', detalle: '#3a3126', fuera: '#18301b' },
-  { nombre: 'Puerto', icono: '⚓', suelo: '#3d4a52', borde: '#56717f', linea: '#f8f9fa', detalle: '#2c363c', fuera: '#13283a' },
-  { nombre: 'Desierto', icono: '🏜️', suelo: '#b08a5a', borde: '#d4b483', linea: '#fff3bf', detalle: '#94744a', fuera: '#7a5c36' },
-  { nombre: 'Nieve', icono: '❄️', suelo: '#8a96a3', borde: '#e7f0f7', linea: '#ffffff', detalle: '#6f7c89', fuera: '#c9d6e2' },
-  { nombre: 'Fábrica', icono: '🏭', suelo: '#4a4440', borde: '#8c5a3c', linea: '#ffa94d', detalle: '#352f2c', fuera: '#241e1a' },
-  { nombre: 'Laboratorio', icono: '🧪', suelo: '#38424d', borde: '#3c8f7c', linea: '#63e6be', detalle: '#29313a', fuera: '#0f1f1b' },
+  { nombre: 'Ciudad', icono: '🏙️', suelo: '#a7abb1', borde: '#c9ced6', linea: '#f1f3f5', detalle: '#979ba1', fuera: '#5f86b8', cielo: '#a5d8ff', pasillo: '#8fa3bd' },
+  { nombre: 'Autopista', icono: '🛣️', suelo: '#9b9da2', borde: '#d0d3d8', linea: '#ffd43b', detalle: '#8b8d92', fuera: '#c9b48a', cielo: '#b8dcf5', pasillo: '#b9a988' },
+  { nombre: 'Bosque', icono: '🌲', suelo: '#a39b8f', borde: '#9fbf8f', linea: '#efe6d2', detalle: '#938b7f', fuera: '#4f8a43', cielo: '#c3e6cb', pasillo: '#7ea36f' },
+  { nombre: 'Puerto', icono: '⚓', suelo: '#a0abb3', borde: '#c4d0d8', linea: '#ffffff', detalle: '#909ba3', fuera: '#3f7fb5', cielo: '#a5d8ff', pasillo: '#86a6bf' },
+  { nombre: 'Desierto', icono: '🏜️', suelo: '#aaa49c', borde: '#d8c7a3', linea: '#fff3bf', detalle: '#9a948c', fuera: '#dcc28e', cielo: '#ffe8cc', pasillo: '#cdb88f' },
+  { nombre: 'Nieve', icono: '❄️', suelo: '#a9b1ba', borde: '#eef3f7', linea: '#ffffff', detalle: '#99a1aa', fuera: '#e3edf5', cielo: '#d0ebff', pasillo: '#c9d6e2' },
+  { nombre: 'Fábrica', icono: '🏭', suelo: '#9a928c', borde: '#c08060', linea: '#ffa94d', detalle: '#8a827c', fuera: '#7a6a5e', cielo: '#ffd8a8', pasillo: '#a08878' },
+  { nombre: 'Laboratorio', icono: '🧪', suelo: '#9eaab4', borde: '#8fd9c6', linea: '#63e6be', detalle: '#8e9aa4', fuera: '#3d6470', cielo: '#c3fae8', pasillo: '#7fa8a8' },
 ];
 
 export interface Ubicacion {

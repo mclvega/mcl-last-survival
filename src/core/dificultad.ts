@@ -1,15 +1,15 @@
 import { estadisticasDe, EDIFICIOS, ORDEN_EDIFICIOS, nivelesVacios } from '../content/edificios';
 import { dpsSoldado } from './armas';
-import type { TipoZombi } from './enemigos';
+import { ZOMBIS, type TipoZombi } from './enemigos';
 import type { Estadisticas } from './escuadra';
 import { rngFrom } from './rng';
 
 export type Dificultad = 'facil' | 'normal' | 'dificil';
 
 export const MODOS: Record<Dificultad, { nombre: string; icono: string; fraccion: [number, number] }> = {
-  facil: { nombre: 'Fácil', icono: '🙂', fraccion: [0.5, 0.7] },
-  normal: { nombre: 'Normal', icono: '😐', fraccion: [0.65, 0.9] },
-  dificil: { nombre: 'Difícil', icono: '😈', fraccion: [0.8, 1.1] },
+  facil: { nombre: 'Fácil', icono: '🙂', fraccion: [0.6, 0.85] },
+  normal: { nombre: 'Normal', icono: '😐', fraccion: [0.8, 1.1] },
+  dificil: { nombre: 'Difícil', icono: '😈', fraccion: [1, 1.35] },
 };
 
 /** Cada 10 niveles hay un jefe especial (premio doble) y cada 5 un nivel de descanso. */
@@ -51,11 +51,7 @@ export function paramsNivel(n: number, dificultad: Dificultad, masFacil = false)
   if (tutorial) fraccion *= 0.7;
   if (masFacil) fraccion *= 0.75;
 
-  const zombis: TipoZombi[] = ['caminante'];
-  if (n >= 4) zombis.push('corredor');
-  if (n >= 8) zombis.push('gordo');
-  if (n >= 12) zombis.push('explosivo');
-  if (n >= 16) zombis.push('escupidor');
+  const zombis = (Object.keys(ZOMBIS) as TipoZombi[]).filter((z) => z !== 'jefe' && ZOMBIS[z].desde <= n);
   const obstaculos: TipoObstaculo[] = [];
   if (n >= 6) obstaculos.push('pinchos');
   if (n >= 14) obstaculos.push('rueda');
@@ -71,7 +67,7 @@ export function paramsNivel(n: number, dificultad: Dificultad, masFacil = false)
     obstaculos,
     puertasNegativas: n >= 5,
     fraccion,
-    tiempoJefe: (8 + 6 * t) * (tipo === 'jefe' ? 1.4 : 1),
+    tiempoJefe: (10 + 8 * t) * (tipo === 'jefe' ? 1.4 : 1),
   };
 }
 

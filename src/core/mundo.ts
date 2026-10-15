@@ -325,15 +325,9 @@ export class Mundo {
       this.y += VEL_AVANCE * dt;
       if (this.y >= this.nivel.largo) this.llegarAlJefe();
     }
-    const r = this.radio;
     // El muro del pasillo lateral limita el camino principal (las balas sí pasan).
-    let min = r;
-    let max = ANCHO - r;
-    for (const p of this.pasillos) {
-      if (this.y < p.y0 - 30 || this.y > p.y1 + 30) continue;
-      if (p.lado === 0) min = Math.max(min, ANCHO_PASILLO);
-      else max = Math.min(max, ANCHO - ANCHO_PASILLO);
-    }
+    const min = ANCHO_PASILLO;
+    const max = ANCHO - ANCHO_PASILLO;
     if (entrada.x !== null) {
       const objetivo = Math.min(max, Math.max(min, entrada.x));
       const d = objetivo - this.x;
@@ -515,7 +509,8 @@ export class Mundo {
     const r = this.radio;
     for (let i = 0; i < e; i++) {
       const ex = this.x + (e === 1 ? 0 : (-1 + (2 * i) / (e - 1)) * r * 0.7);
-      const ey = this.y + r * 0.4;
+      // Pequeño desfase para que las balas no salgan en filas perfectas.
+      const ey = this.y + r * 0.4 + this.rng() * 14;
       for (let k = 0; k < a.balas; k++) {
         const abanico = a.balas > 1 ? (-0.5 + k / (a.balas - 1)) * a.dispersion * 2 : 0;
         const ang = abanico + (this.rng() - 0.5) * a.dispersion;
@@ -659,6 +654,10 @@ export class Mundo {
       this.bajas++;
     }
     this.evento({ t: 'muerte', x: z.x, y: z.y, z: z.tipo, monedas });
+    if (z.tipo === 'divisor' && conMonedas) {
+      // Al morir se parte en tres perros zombi.
+      for (let i = -1; i <= 1; i++) this.crearZombi('perro', Math.min(ANCHO - ANCHO_PASILLO - 8, Math.max(ANCHO_PASILLO + 8, z.x + i * 14)), z.y + 6, z.vidaMax * 0.2);
+    }
     if (z.tipo === 'explosivo') this.explosiones.push({ x: z.x, y: z.y, r: 60, dano: ZOMBIS.caminante.vida * this.nivel.escala * 3, danaEscuadra: true });
     if (z.tipo === 'jefe') {
       this.jefesDerrotados++;
@@ -751,6 +750,7 @@ export class Mundo {
         z.y -= z.vel * dt;
         if (dy < 560) z.x += Math.max(-info.lateral, Math.min(info.lateral, (this.x - z.x) * 2)) * dt;
       }
+      if (z.tipo !== 'jefe') z.x = Math.min(ANCHO - ANCHO_PASILLO - z.r * 0.5, Math.max(ANCHO_PASILLO + z.r * 0.5, z.x));
       // Contacto con el escuadrón.
       const dx = z.x - this.x;
       const dy2 = z.y - this.y;
@@ -869,9 +869,11 @@ export class Mundo {
       if (o.tipo === 'rueda') {
         o.x += o.vx * dt;
         o.giro += (o.vx / o.r) * dt;
-        if (o.x < o.r || o.x > ANCHO - o.r) {
+        const a = ANCHO_PASILLO + o.r;
+        const b = ANCHO - ANCHO_PASILLO - o.r;
+        if (o.x < a || o.x > b) {
           o.vx = -o.vx;
-          o.x = Math.min(ANCHO - o.r, Math.max(o.r, o.x));
+          o.x = Math.min(b, Math.max(a, o.x));
         }
         if (o.t > 0) o.t -= dt;
         const dx = o.x - this.x;

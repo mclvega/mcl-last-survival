@@ -57,8 +57,8 @@ export class Bot {
         }
       }
       for (const pas of m.pasillos) {
-        const d = pas.y0 - m.y;
-        if (d > 450 || m.y > pas.y1) continue;
+        const viva = pas.fichas.find((f) => f.vivo && f.y > m.y && f.y - m.y < 450);
+        if (!viva) continue;
         const borde = pas.lado === 0 ? 0 : ANCHO;
         p += Math.max(0, 120 - Math.abs(x - borde)) * (pas.fichas[0]?.op === 'mult' ? 1.2 : 0.8);
       }
@@ -100,13 +100,14 @@ export function simular(nivel: Nivel, stats: Estadisticas, maxSegundos = 400): R
 
 /**
  * Genera el nivel y comprueba con el bot que se puede ganar. Si el bot pierde,
- * se vuelve a generar con menos zombis (hasta 4 intentos).
+ * se vuelve a generar con menos zombis (hasta 6 intentos).
  */
 export function generarNivelValidado(p: ParamsNivel, ref: Estadisticas): Nivel {
   let nivel = generarNivel(p, ref, 0);
-  for (let intento = 0; intento < 4; intento++) {
+  for (let intento = 0; intento < 6; intento++) {
     nivel = generarNivel(p, ref, intento);
-    if (simular(nivel, ref).estado === 'victoria') return nivel;
+    // El bot debe ganar en un tiempo razonable (el camino más un minuto de jefe).
+    if (simular(nivel, ref, nivel.largo / 75 + 60).estado === 'victoria') return nivel;
   }
   return nivel;
 }
